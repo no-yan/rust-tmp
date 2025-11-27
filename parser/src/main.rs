@@ -4,6 +4,29 @@ fn main() {
     let stdin = std::io::read_to_string(std::io::stdin()).unwrap();
     let split = stdin.split_whitespace();
 
-    let sum :i32= split.filter_map(|s| s.parse::<i32>().ok()).sum();
+    let sum = calc(split);
     println!("{}", sum);
+}
+
+fn calc<I, S>(input: I) -> i32
+where
+    I: Iterator<Item = S>,
+    S: AsRef<str>,
+{
+    input
+        .filter_map(|s: S| s.as_ref().parse::<i32>().ok())
+        .sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sum() {
+        let input = "1 + 2".split_whitespace();
+        let res = calc(input);
+
+        assert_eq!(res, 3);
+    }
 }
