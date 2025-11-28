@@ -52,11 +52,11 @@ impl<'a> Lexer<'a> {
         Lexer { pos: 0, input }
     }
 
-    // 入力全体をトークナイズし、Vec<Token> を返す
-    // - 空白は無視する
-    // - 連続する数字は一つのトークンとして扱う
-    // - TODO: 小数点のサポート
-    // - 不正な文字列があればErrを返す
+    /// 入力全体をトークナイズし、Vec<Token> を返す
+    /// - 空白は無視する
+    /// - 連続する数字は一つのトークンとして扱う
+    /// - TODO: 小数点のサポート
+    /// - 不正な文字列があればErrを返す
     pub fn lex(&mut self) -> Result<Vec<Token>, Box<dyn Error>> {
         let mut tokens = Vec::new();
         loop {
@@ -70,8 +70,8 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    // 現在位置から次の1トークンを読む
-    // 不正な文字に遭遇したらErrを返す
+    /// 現在位置から次の1トークンを読む
+    /// 不正な文字に遭遇したらErrを返す
     pub fn next_token(&mut self) -> Result<Token, Box<dyn Error>> {
         use crate::Token::*;
 
@@ -110,7 +110,7 @@ impl<'a> Lexer<'a> {
         self.input[self.pos..].chars().next()
     }
 
-    // 1トークン読み進め、posを更新する
+    /// 1トークン読み進め、posを更新する
     pub fn bump(&mut self) -> Option<char> {
         let mut iter = self.input[self.pos..].chars();
         let ch = iter.next()?;
