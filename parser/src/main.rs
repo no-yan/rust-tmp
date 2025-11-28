@@ -1,7 +1,7 @@
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let stdin = std::io::read_to_string(std::io::stdin()).unwrap();
+    let stdin = std::io::read_to_string(std::io::stdin())?;
     let mut lexer = Lexer::new(&stdin);
     let tokens = lexer.lex()?;
 
@@ -14,15 +14,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-    let left = &input[0];
-    let op = &input[1];
-    let right = &input[2];
-
-    let Token::Num(left) = left else {
-        return Err("error".into());
-    };
-    let Token::Num(right) = right else {
-        return Err("error".into());
+    let [Token::Num(left),op, Token::Num(right)] = &input[..]  else {
+        unimplemented!();
     };
 
     let result = match op {
@@ -44,7 +37,7 @@ enum Token {
     Div,
 
     Num(i32),
-    Eof,
+    Eof, // レキサーの内部表現として使用する
 }
 
 struct Lexer<'a> {
@@ -151,6 +144,7 @@ impl<'a> Lexer<'a> {
         }
 
         let num_str = &self.input[start..self.pos];
+        // Safety: ascii_digitの文字列で構成されているため、安全にパースできます
         num_str.parse::<i32>().unwrap()
     }
 }
