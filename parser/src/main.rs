@@ -1,8 +1,10 @@
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let stdin = std::io::read_to_string(std::io::stdin())?;
-    let mut lexer = Lexer::new(&stdin);
+    let mut buf = String::new();
+    std::io::stdin().read_line(&mut buf)?;
+
+    let mut lexer = Lexer::new(&buf);
     let tokens = lexer.lex()?;
 
     match process(tokens) {
