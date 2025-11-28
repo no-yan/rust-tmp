@@ -68,11 +68,10 @@ impl<'a> Lexer<'a> {
 
         let mut tokens = Vec::new();
         loop {
-            let tok = self.next_token();
+            let tok = self.next_token()?;
             match tok {
-                Err(msg) => return Err(msg),
-                Ok(Token::Eof) => break,
-                Ok(t) => tokens.push(t),
+                Token::Eof => break,
+                t => tokens.push(t),
             };
         }
 
