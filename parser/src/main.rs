@@ -121,21 +121,18 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn bump(&mut self) -> Option<char> {
-        let mut iter = self.input[self.pos..].char_indices();
-        let (_, ch) = iter.next()?;
+        let mut iter = self.input[self.pos..].chars();
+        let ch = iter.next()?;
 
-        if let Some((next_pos, _)) = iter.next() {
-            self.pos += next_pos;
-        } else {
-            self.pos = self.input.len();
-        }
+        // 多バイト文字を考慮してutf8に変換
+        self.pos += ch.len_utf8();
 
         Some(ch)
     }
 
     pub fn next_number(&mut self) -> i32 {
         // この関数に渡ってくる段階ですでに１文字目が読まれている
-        let start = self.pos-1;
+        let start = self.pos - 1;
         while let Some(c) = self.peek() {
             if c.is_ascii_digit() {
                 self.bump();
