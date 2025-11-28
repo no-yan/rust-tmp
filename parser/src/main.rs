@@ -72,7 +72,7 @@ impl<'a> Lexer<'a> {
             match tok {
                 Err(msg) => return Err(msg),
                 Ok(Token::Eof) => break,
-                Ok(t) => tokens.push(t)
+                Ok(t) => tokens.push(t),
             };
         }
 
@@ -85,37 +85,35 @@ impl<'a> Lexer<'a> {
     pub fn next_token(&mut self) -> Result<Token, Box<dyn Error>> {
         use crate::Token::*;
 
-        while let Some(c) = self.peek() {
-          match c {
-                c if c.is_whitespace() => {
-                    self.bump();
-                }
-                '+' => {
-                    self.bump();
-                    return Ok(Plus);
-                }
-                '-' => {
-                    self.bump();
-                    return Ok(Minus);
-                }
-                '*' => {
-                    self.bump();
-                    return Ok(Mul);
-                }
-                '/' => {
-                    self.bump();
-                    return Ok(Div);
-                }
-                c if c.is_ascii_digit() => {
-                    let num = self.next_number();
-                    return Ok(Num(num));
-                }
-                c => return Err(format!("Invalid token: {}", c).into()),
-            };
+        self.skip_whitespace();
+
+        let char = match self.bump() {
+            Some(c) => c,
+            None => return Ok(Token::Eof),
         };
 
-        Ok(Eof)
+        let tok = match char {
+            '+' => Plus,
+            '-' => Minus,
+            '*' => Mul,
+            '/' => Div,
+            c if c.is_ascii_digit() => {
+                let num = self.next_number();
+                Num(num)
+            }
+            c => return Err(format!("Invalid token: {}", c).into()),
+        };
 
+        Ok(tok)
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            if !c.is_whitespace() {
+                break;
+            }
+            self.bump();
+        }
     }
 
     fn peek(&self) -> Option<char> {
@@ -136,7 +134,8 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn next_number(&mut self) -> i32 {
-        let start = self.pos;
+        // この関数に渡ってくる段階ですでに１文字目が読まれている
+        let start = self.pos-1;
         while let Some(c) = self.peek() {
             if c.is_ascii_digit() {
                 self.bump();
@@ -146,7 +145,7 @@ impl<'a> Lexer<'a> {
         }
 
         let num_str = &self.input[start..self.pos];
-        // Safety: ascii_digitの文字列で構成されているため、安全にパースできます
+        // Safety: ascii_digitの文字列で構成されているため、安全にパースできる
         num_str.parse::<i32>().unwrap()
     }
 }
