@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-    let [Token::Num(left),op, Token::Num(right)] = &input[..]  else {
+    let [Token::Num(left), op, Token::Num(right)] = &input[..] else {
         unimplemented!();
     };
 
