@@ -16,17 +16,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-    let [Token::Num(left), op, Token::Num(right)] = &input[..] else {
-        unimplemented!();
+    let mut input = input.into_iter();
+
+    // Expr = Num (Op NUM)*
+    let Some(Token::Num(n)) = input.next() else {
+        return  Err("Not num".into());
     };
 
-    let result = match op {
-        Token::Plus => left + right,
-        Token::Minus => left - right,
-        Token::Mul => left * right,
-        Token::Div => left / right,
-        _ => return Err("unimplemented".into()),
-    };
+    let mut result = n;
+
+    while let (Some(op), Some(Token::Num(right))) = (input.next(), input.next()) {
+        result = match op {
+            Token::Plus => result + right,
+            Token::Minus => result - right,
+            Token::Mul => result * right,
+            Token::Div => result / right,
+            _ => return Err("unimplemented".into()),
+        };
+    }
 
     Ok(result)
 }
@@ -151,6 +158,36 @@ mod tests {
         let result = process(tokens);
 
         assert_eq!(result.unwrap(), 3);
+    }
+
+    #[test]
+    fn sum_3_operand() {
+        let input = "1 + 2 + 3";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = process(tokens);
+
+        assert_eq!(result.unwrap(), 6);
+    }
+
+    #[test]
+    fn prod_3_operand() {
+        let input = "1*2*3";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = process(tokens);
+
+        assert_eq!(result.unwrap(), 6);
+    }
+
+    #[test]
+    fn process_with_priority() {
+        let input = "1+2*3";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = process(tokens);
+
+        assert_eq!(result.unwrap(), 7);
     }
 
     #[test]
