@@ -58,14 +58,6 @@ impl<'a> Lexer<'a> {
     // - TODO: 小数点のサポート
     // - 不正な文字列があればErrを返す
     pub fn lex(&mut self) -> Result<Vec<Token>, Box<dyn Error>> {
-        // 1. 結果用のベクタを用意
-        // 2. self.peek() で次の文字列をみてループ
-        //  - None なら終了
-        //  - 空白ならself.bump()
-        //  - +, -, *, / なら対応するtokenをpush
-        //  - 数字なら、連続するdigitを一つのトークンとする
-        //  - それ以外ならErrを返す
-
         let mut tokens = Vec::new();
         loop {
             let tok = self.next_token()?;
@@ -79,7 +71,6 @@ impl<'a> Lexer<'a> {
     }
 
     // 現在位置から次の1トークンを読む
-    // Tokenを読んだ分posを進める
     // 不正な文字に遭遇したらErrを返す
     pub fn next_token(&mut self) -> Result<Token, Box<dyn Error>> {
         use crate::Token::*;
@@ -119,6 +110,7 @@ impl<'a> Lexer<'a> {
         self.input[self.pos..].chars().next()
     }
 
+    // 1トークン読み進め、posを更新する
     pub fn bump(&mut self) -> Option<char> {
         let mut iter = self.input[self.pos..].chars();
         let ch = iter.next()?;
