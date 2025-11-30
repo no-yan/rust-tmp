@@ -15,27 +15,109 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// TOOD:
+// ゴール: 優先順位をつけた演算をサポートする
+// 1. 演算子の計算順序を書き下す
+// 2. 演算子の処理の実装方法を9ccで確認する
+// 3. goの実装手順を確認する
+// 4. +だけの演算をサポートするShunting yard algorithmを実装する
+// 5. -をサポート
+// 6. トークンの優先順位をサポートし、演算規則をサポート
+// 7. カッコをサポートする
+//
+// Stackの実装手順
+// 実装方針の調査
+//
+// Shunting yard algorithm
+//
+// 演算子がオペランドの間におかれる構文を解析するアルゴリズム。得られる出力は逆ポーランド記法になる。
+// 以下の手順で解析する:
+// 出力用のベクタと、演算子を一時的に保管するStackを用意する。
+// 入力からトークンをpopする
+// 1. 数値: 出力にpush
+// 2. 演算子: 
+//      Stackのtopがより高い優先順位を持つ場合:
+//          stackをpop, 出力にpush
+//      Stackにpush
+// 3. 入力が空になったら:
+//      Stackを空になるまでpopし出力にpushする
+//
+//  四則演算を行うには、演算子を評価するときに、stackから2つpopして、それらを計算することで結果を得られる
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-    let mut input = input.into_iter();
+    let input = input.into_iter();
 
-    // Expr = Num (Op NUM)*
-    let Some(Token::Num(n)) = input.next() else {
-        return  Err("Not num".into());
-    };
+    // 1. 計算の順序 
+    //
+    // (*, /) → (+, -)
+    //
+    // 2. EBNF
+    //
+    // Expr      = UnaryExpr
+    //           | Expr BinaryOp Expr
+    // BinaryOp  = AddOp | MulOp
+    // AddOp     = "+" | "-"
+    // MulOp     = "*" | "/"
+    // UnaryExpr = Num
+    
+    let mut output = vec![];
+    let mut ops_stack = vec![];
 
-    let mut result = n;
+    // 入力が空になるまで、次のことを続ける
+    // 1. トークンを一つ読み出す
+    // 2. トークン種別に応じて次のことを行う
+    //    a. 数値: output.push
+    //    b. 演算子: ops_stack.push
+    // 
+    // 空になったら、出力を評価する
+    // 出力に入った演算子は動かないため、これは次のように最適化できる
+    // - 演算子をoutputにpushしようとするたび、その代わりにoutputを2回popし、演算を適用する
+    // - e.g.  
+    //      Output: [3, 3], Op: "+"　→ Output: [6]
+    //
 
-    while let (Some(op), Some(Token::Num(right))) = (input.next(), input.next()) {
-        result = match op {
-            Token::Plus => result + right,
-            Token::Minus => result - right,
-            Token::Mul => result * right,
-            Token::Div => result / right,
-            _ => return Err("unimplemented".into()),
-        };
+    for tok in input {
+        match tok {
+            Token::Num(n) => output.push(n),
+            Token::Plus => {
+                ops_stack.push(tok);
+            }
+            _ => todo!(),
+        }
     }
 
-    Ok(result)
+    for op in ops_stack.into_iter().rev() {
+        match op {
+            Token::Plus => {
+                let (Some(rhs), Some(lhs)) = (output.pop(), output.pop()) else {
+                    panic!();
+                };
+                output.push(rhs + lhs);
+            }
+            _ => todo!(),
+        }
+    }
+
+    assert!(output.len() == 1);
+    println!("{output:?}");
+
+    Ok(output[0])
+    // let Some(Token::Num(n)) = input.next() else {
+    //     return  Err("Not num".into());
+    // };
+    //
+    // let mut result = n;
+    //
+    // while let (Some(op), Some(Token::Num(right))) = (input.next(), input.next()) {
+    //     result = match op {
+    //         Token::Plus => result + right,
+    //         Token::Minus => result - right,
+    //         Token::Mul => result * right,
+    //         Token::Div => result / right,
+    //         _ => return Err("unimplemented".into()),
+    //     };
+    // }
+    //
+    // Ok(result)
 }
 
 #[derive(Debug, PartialEq, Clone)]
