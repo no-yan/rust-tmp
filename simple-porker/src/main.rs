@@ -103,6 +103,7 @@ impl Deck {
 #[derive(Debug, PartialEq)]
 pub enum Rank {
     HighCard(u8),
+    Pair,
     Straight,
 }
 
@@ -111,9 +112,26 @@ impl Rank {
         if Self::is_straight(hands) {
             return Rank::Straight;
         }
+        if Self::is_pair(hands) {
+            return Rank::Pair;
+        }
 
         let highest = hands.iter().map(|card| card.number()).max().unwrap_or(0);
         Rank::HighCard(highest)
+    }
+
+    fn is_pair(hands: &Hands) -> bool {
+        let mut seen: [bool; 14] = Default::default();
+        let mut max_pair  : i8= -1;
+        for card in hands.0 {
+            let number: usize = card.number().into();
+            if seen[number] {
+                max_pair = max(max_pair, number as i8);
+            }
+            seen[number] = true;
+        }
+
+        max_pair >= 0
     }
 
     fn is_straight(hands: &Hands) -> bool {
@@ -122,7 +140,8 @@ impl Rank {
         // 1. 手札の5枚の最大値と最小値の差が4
         // 2. 手札に同じ値が存在しない
         //
-        // エッジケースとして、Aは1,2,3,4,5と10,11,12,13,1の二種類のストーレートに含まれるため、最大値のAは手計算
+        // エッジケースとして、Aは1,2,3,4,5と10,11,12,13,1の二種類のストーレートに含まれる。
+        // 10, 11, 12, 13, 1は 最大値(13)と最小値(1)の差が1にならないため、個別に判定する
         let mut seen: [bool; 14] = Default::default();
         let (mut mn, mut mx) = (usize::MAX, 0);
 
