@@ -2,22 +2,35 @@ use rand::prelude::SliceRandom;
 use std::cmp::{max, min};
 use std::ops::Deref;
 use std::ops::DerefMut;
+use std::fmt::Display;
+use std::fmt;
+
+mod io;
+
+use crate::io::{DiscardAction, prompt_discard};
 
 // TODO:
 // 1. 手役を実装する
 //  - OnePair, TwoPair, ThreeCard, Straight, Flash,
 //  - FullHouse, FourCard, StraightFlash, LoyalStraghtFlash,
-// 2. 対話的に引き直しを実装する
 fn main() {
     let mut deck = Deck::new();
     let mut hands = Hands::new_from_deck(&mut deck);
 
-    println!("{hands:?}");
-    // TODO: 2回交換できる
-    hands.exchange(&mut deck, hands[0]);
+    for _ in 0..2 {
+        let action = prompt_discard(&hands);
+        match action {
+            DiscardAction::Stand => break,
+            DiscardAction::Discard(v) => {
+                for i in v {
+                    hands.exchange(&mut deck, hands[i as usize]);
+                }
+            }
+        }
+    }
 
     let rank = hands.rank();
-    println!("{hands:?}");
+    println!("{hands}");
     println!("{rank:?}");
 }
 
@@ -29,15 +42,36 @@ pub enum Card {
     Spade(u8),
 }
 
+impl Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let  (suit, number) = match self {
+            Card::Clover(n) => ("♣️", n),
+            Card::Diamond(n)=> ("♦️", n),
+            Card::Heart(n)=> ("❤️", n),
+            Card::Spade(n) => ("♠️", n),
+        };
+
+        let num_str: &str = match number {
+            1 => "A",
+            11 => "J",
+            12 => "Q",
+            13 => "K",
+            _ => &number.to_string(),
+        };
+        write!(f, "{}{}", suit, num_str )
+    }
+}
+
 impl Card {
-    fn number(self) -> usize {
-        match self {
+    fn number(&self) -> usize {
+        let n = match self {
             Card::Clover(n) => n,
             Card::Diamond(n) => n,
             Card::Heart(n) => n,
             Card::Spade(n) => n,
-        }
-        .into()
+        };
+        (*n).into()
+
     }
 }
 
@@ -142,6 +176,18 @@ impl Hands {
 
     fn rank(&self) -> Rank {
         Rank::evaluate(self)
+    }
+}
+
+
+impl Display for Hands {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, card) in self.0.iter().enumerate() {
+            write!(f, "{}. ", i+1)?; // 1-indexed;
+            card.fmt(f)?;
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }
 
