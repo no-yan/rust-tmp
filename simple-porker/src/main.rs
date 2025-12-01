@@ -54,7 +54,7 @@ impl Display for Card {
             11 => "J",
             12 => "Q",
             13 => "K",
-            _ => &number.to_string(),
+            _ => return write!(f, "{}{}", suit, number),
         };
         write!(f, "{}{}", suit, num_str)
     }
