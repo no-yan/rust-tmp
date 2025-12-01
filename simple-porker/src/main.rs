@@ -70,7 +70,7 @@ impl Card {
             Card::Heart(n) => n,
             Card::Spade(n) => n,
         };
-        (*n).into()
+        *n
     }
 }
 
@@ -184,7 +184,7 @@ impl Display for Hands {
         for (i, card) in self.0.iter().enumerate() {
             write!(f, "{}. ", i + 1)?; // 1-indexed;
             card.fmt(f)?;
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         Ok(())
     }
