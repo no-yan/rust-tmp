@@ -10,9 +10,7 @@ mod io;
 use crate::io::{DiscardAction, prompt_discard};
 
 // TODO:
-// 1. 手役を実装する
-//  - OnePair, TwoPair, ThreeCard, Straight, Flush,
-//  - FullHouse, FourCard, StraightFlush, LoyalStraghtFlush,
+// - [ ] 未実装の手役を実装する
 fn main() {
     let mut deck = Deck::new();
     let mut hands = Hands::new_from_deck(&mut deck);
@@ -103,24 +101,52 @@ impl Deck {
 #[derive(Debug, PartialEq)]
 pub enum Rank {
     HighCard(u8),
-    Pair,
+    OnePair,
+    TwoPair,
+    ThreeCard,
     Straight,
+    Flush,
+    FullHouse,
+    FourCard,
+    StraightFlush,
+    RoyalStraightFlush,
 }
 
 impl Rank {
     fn evaluate(hands: &Hands) -> Rank {
+        if Self::is_loyal_straght_flush(hands) {
+            return Rank::RoyalStraightFlush;
+        }
+        if Self::is_straight_flush(hands) {
+            return Rank::StraightFlush;
+        }
+        if Self::is_four_card(hands) {
+            return Rank::FourCard;
+        }
+        if Self::is_full_house(hands) {
+            return Rank::FullHouse;
+        }
+        if Self::is_flush(hands) {
+            return Rank::Flush;
+        }
         if Self::is_straight(hands) {
             return Rank::Straight;
         }
-        if Self::is_pair(hands) {
-            return Rank::Pair;
+        if Self::is_three_card(hands) {
+            return Rank::ThreeCard;
+        }
+        if Self::is_two_pair(hands) {
+            return Rank::TwoPair;
+        }
+        if Self::is_one_pair(hands) {
+            return Rank::OnePair;
         }
 
         let highest = hands.iter().map(|card| card.number()).max().unwrap_or(0);
         Rank::HighCard(highest)
     }
 
-    fn is_pair(hands: &Hands) -> bool {
+    fn is_one_pair(hands: &Hands) -> bool {
         let mut seen: [bool; 14] = Default::default();
         let mut max_pair: i8 = -1;
         for card in hands.0 {
@@ -134,6 +160,12 @@ impl Rank {
         max_pair >= 0
     }
 
+    fn is_two_pair(hands: &Hands) -> bool {
+        unimplemented!();
+    }
+    fn is_three_card(hands: &Hands) -> bool {
+        unimplemented!();
+    }
     fn is_straight(hands: &Hands) -> bool {
         // ストレートは連続した数値からなる5枚のカードから作られる
         // これは、以下の条件と同値である:
@@ -158,6 +190,22 @@ impl Rank {
         mx - mn == 4
         // エッジケース: 10, 11,12,13, 1
        ||  (seen[1] && seen[10] && seen[11] && seen[12] && seen[13])
+    }
+
+    fn is_flush(hands: &Hands) -> bool {
+        unimplemented!();
+    }
+    fn is_full_house(hands: &Hands) -> bool {
+        unimplemented!();
+    }
+    fn is_four_card(hands: &Hands) -> bool {
+        unimplemented!();
+    }
+    fn is_straight_flush(hands: &Hands) -> bool {
+        unimplemented!();
+    }
+    fn is_loyal_straght_flush(hands: &Hands) -> bool {
+        unimplemented!();
     }
 }
 
