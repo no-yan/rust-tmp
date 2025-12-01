@@ -122,7 +122,7 @@ impl Rank {
 
     fn is_pair(hands: &Hands) -> bool {
         let mut seen: [bool; 14] = Default::default();
-        let mut max_pair  : i8= -1;
+        let mut max_pair: i8 = -1;
         for card in hands.0 {
             let number: usize = card.number().into();
             if seen[number] {
