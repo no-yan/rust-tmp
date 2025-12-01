@@ -1,9 +1,9 @@
 use rand::prelude::SliceRandom;
 use std::cmp::{max, min};
+use std::fmt;
+use std::fmt::Display;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use std::fmt::Display;
-use std::fmt;
 
 mod io;
 
@@ -11,8 +11,8 @@ use crate::io::{DiscardAction, prompt_discard};
 
 // TODO:
 // 1. 手役を実装する
-//  - OnePair, TwoPair, ThreeCard, Straight, Flash,
-//  - FullHouse, FourCard, StraightFlash, LoyalStraghtFlash,
+//  - OnePair, TwoPair, ThreeCard, Straight, Flush,
+//  - FullHouse, FourCard, StraightFlush, LoyalStraghtFlush,
 fn main() {
     let mut deck = Deck::new();
     let mut hands = Hands::new_from_deck(&mut deck);
@@ -23,7 +23,7 @@ fn main() {
             DiscardAction::Stand => break,
             DiscardAction::Discard(v) => {
                 for i in v {
-                    hands.exchange(&mut deck, hands[i as usize]);
+                    hands.exchange(&mut deck, hands[i]);
                 }
             }
         }
@@ -44,10 +44,10 @@ pub enum Card {
 
 impl Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let  (suit, number) = match self {
+        let (suit, number) = match self {
             Card::Clover(n) => ("♣️", n),
-            Card::Diamond(n)=> ("♦️", n),
-            Card::Heart(n)=> ("❤️", n),
+            Card::Diamond(n) => ("♦️", n),
+            Card::Heart(n) => ("❤️", n),
             Card::Spade(n) => ("♠️", n),
         };
 
@@ -58,12 +58,12 @@ impl Display for Card {
             13 => "K",
             _ => &number.to_string(),
         };
-        write!(f, "{}{}", suit, num_str )
+        write!(f, "{}{}", suit, num_str)
     }
 }
 
 impl Card {
-    fn number(&self) -> usize {
+    fn number(&self) -> u8 {
         let n = match self {
             Card::Clover(n) => n,
             Card::Diamond(n) => n,
@@ -71,7 +71,6 @@ impl Card {
             Card::Spade(n) => n,
         };
         (*n).into()
-
     }
 }
 
@@ -103,8 +102,8 @@ impl Deck {
 
 #[derive(Debug, PartialEq)]
 pub enum Rank {
+    HighCard(u8),
     Straight,
-    NoRank,
 }
 
 impl Rank {
@@ -113,7 +112,8 @@ impl Rank {
             return Rank::Straight;
         }
 
-        Rank::NoRank
+        let highest = hands.iter().map(|card| card.number()).max().unwrap_or(0);
+        Rank::HighCard(highest)
     }
 
     fn is_straight(hands: &Hands) -> bool {
@@ -124,10 +124,10 @@ impl Rank {
         //
         // エッジケースとして、Aは1,2,3,4,5と10,11,12,13,1の二種類のストーレートに含まれるため、最大値のAは手計算
         let mut seen: [bool; 14] = Default::default();
-        let (mut mn, mut mx) = (255, 0);
+        let (mut mn, mut mx) = (usize::MAX, 0);
 
         for card in hands.0 {
-            let number = card.number();
+            let number: usize = card.number().into();
             if seen[number] {
                 return false;
             }
@@ -179,11 +179,10 @@ impl Hands {
     }
 }
 
-
 impl Display for Hands {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, card) in self.0.iter().enumerate() {
-            write!(f, "{}. ", i+1)?; // 1-indexed;
+            write!(f, "{}. ", i + 1)?; // 1-indexed;
             card.fmt(f)?;
             write!(f, "\n")?;
         }
