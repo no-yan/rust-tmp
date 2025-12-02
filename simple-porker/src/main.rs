@@ -1,5 +1,5 @@
 use rand::prelude::SliceRandom;
-use std::cmp::{max, min};
+use std::cmp::max;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -114,33 +114,33 @@ pub enum Rank {
 
 impl Rank {
     fn evaluate(hands: &Hands) -> Rank {
-        if Self::is_loyal_straght_flush(hands) {
-            return Rank::RoyalStraightFlush;
-        }
-        if Self::is_straight_flush(hands) {
-            return Rank::StraightFlush;
-        }
-        if Self::is_four_card(hands) {
-            return Rank::FourCard;
-        }
-        if Self::is_full_house(hands) {
-            return Rank::FullHouse;
-        }
-        if Self::is_flush(hands) {
-            return Rank::Flush;
-        }
+        // if Self::is_loyal_straght_flush(hands) {
+        //     return Rank::RoyalStraightFlush;
+        // }
+        // if Self::is_straight_flush(hands) {
+        //     return Rank::StraightFlush;
+        // }
+        // if Self::is_four_card(hands) {
+        //     return Rank::FourCard;
+        // }
+        // if Self::is_full_house(hands) {
+        //     return Rank::FullHouse;
+        // }
+        // if Self::is_flush(hands) {
+        //     return Rank::Flush;
+        // }
         if Self::is_straight(hands) {
             return Rank::Straight;
         }
-        if Self::is_three_card(hands) {
-            return Rank::ThreeCard;
-        }
-        if Self::is_two_pair(hands) {
-            return Rank::TwoPair;
-        }
-        if Self::is_one_pair(hands) {
-            return Rank::OnePair;
-        }
+        // if Self::is_three_card(hands) {
+        //     return Rank::ThreeCard;
+        // }
+        // if Self::is_two_pair(hands) {
+        //     return Rank::TwoPair;
+        // }
+        // if Self::is_one_pair(hands) {
+        //     return Rank::OnePair;
+        // }
 
         let highest = hands.iter().map(|card| card.number()).max().unwrap_or(0);
         Rank::HighCard(highest)
@@ -167,15 +167,8 @@ impl Rank {
         unimplemented!();
     }
     fn is_straight(hands: &Hands) -> bool {
-        // ストレートは連続した数値からなる5枚のカードから作られる
-        // これは、以下の条件と同値である:
-        // 1. 手札の5枚の最大値と最小値の差が4
-        // 2. 手札に同じ値が存在しない
-        //
-        // エッジケースとして、Aは1,2,3,4,5と10,11,12,13,1の二種類のストーレートに含まれる。
-        // 10, 11, 12, 13, 1は 最大値(13)と最小値(1)の差が1にならないため、個別に判定する
-        let mut seen: [bool; 14] = Default::default();
-        let (mut mn, mut mx) = (usize::MAX, 0);
+        // 手札が連続した5つの数値であるか確認する
+        let mut seen: [bool; 15] = Default::default();
 
         for card in hands.0 {
             let number: usize = card.number().into();
@@ -183,13 +176,23 @@ impl Rank {
                 return false;
             }
             seen[number] = true;
-            mn = min(mn, number);
-            mx = max(mx, number);
         }
 
-        mx - mn == 4
-        // エッジケース: 10, 11,12,13, 1
-       ||  (seen[1] && seen[10] && seen[11] && seen[12] && seen[13])
+        // Aで終わるストレートを考慮するため、10..14をチェックする
+        seen[14] = seen[1];
+
+        let mut sum : usize =  seen[0..5].iter().filter(|&&b| b).count();
+        for i in 0..10 {
+            sum -= seen[i] as usize;
+            sum += seen[i+ 5] as usize;
+
+            if sum == 5 {
+                return true;
+            }
+        }
+
+        false
+
     }
 
     fn is_flush(hands: &Hands) -> bool {
