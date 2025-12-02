@@ -1,5 +1,4 @@
 use rand::prelude::SliceRandom;
-use std::cmp::max;
 use std::fmt;
 use std::fmt::Display;
 use std::ops::Deref;
@@ -9,8 +8,6 @@ mod io;
 
 use crate::io::{DiscardAction, prompt_discard};
 
-// TODO:
-// - [ ] 未実装の手役を実装する
 fn main() {
     let mut deck = Deck::new();
     let mut hands = Hands::new_from_deck(&mut deck);
@@ -130,109 +127,140 @@ pub enum Rank {
 
 impl Rank {
     fn evaluate(hands: &Hands) -> Rank {
-        // if Self::is_loyal_straght_flush(hands) {
-        //     return Rank::RoyalStraightFlush;
-        // }
-        // if Self::is_straight_flush(hands) {
-        //     return Rank::StraightFlush;
-        // }
-        // if Self::is_four_card(hands) {
-        //     return Rank::FourCard;
-        // }
-        // if Self::is_full_house(hands) {
-        //     return Rank::FullHouse;
-        // }
-        // if Self::is_flush(hands) {
-        //     return Rank::Flush;
-        // }
-        if Self::is_straight(hands) {
+        let stats = HandStats::from(hands);
+
+        if stats.is_royal_straight_flush() {
+            return Rank::RoyalStraightFlush;
+        }
+        if stats.is_straight_flush() {
+            return Rank::StraightFlush;
+        }
+        if stats.is_four_card() {
+            return Rank::FourCard;
+        }
+        if stats.is_full_house() {
+            return Rank::FullHouse;
+        }
+        if stats.is_flush() {
+            return Rank::Flush;
+        }
+        if stats.is_straight() {
             return Rank::Straight;
         }
-        // if Self::is_three_card(hands) {
-        //     return Rank::ThreeCard;
-        // }
-        // if Self::is_two_pair(hands) {
-        //     return Rank::TwoPair;
-        // }
-        // if Self::is_one_pair(hands) {
-        //     return Rank::OnePair;
-        // }
-
-        let highest = hands.iter().map(|card| card.number).max().unwrap_or(0);
-        Rank::HighCard(highest)
-    }
-
-    #[allow(dead_code, unused_variables)]
-    fn is_one_pair(hands: &Hands) -> bool {
-        let mut seen: [bool; 14] = Default::default();
-        let mut max_pair: i8 = -1;
-        for card in hands.0 {
-            let number: usize = card.number.into();
-            if seen[number] {
-                max_pair = max(max_pair, number as i8);
-            }
-            seen[number] = true;
+        if stats.is_three_card() {
+            return Rank::ThreeCard;
+        }
+        if stats.is_two_pair() {
+            return Rank::TwoPair;
+        }
+        if stats.is_one_pair() {
+            return Rank::OnePair;
         }
 
-        max_pair >= 0
+        Rank::HighCard(stats.highest)
     }
+}
 
-    #[allow(dead_code, unused_variables)]
-    fn is_two_pair(hands: &Hands) -> bool {
-        unimplemented!();
-    }
-    #[allow(dead_code, unused_variables)]
-    fn is_three_card(hands: &Hands) -> bool {
-        unimplemented!();
-    }
-    #[allow(dead_code, unused_variables)]
-    fn is_straight(hands: &Hands) -> bool {
-        // 手札が連続した5つの数値であるか確認する
-        let mut seen: [bool; 15] = Default::default();
+#[derive(Debug, Clone)]
+struct HandStats {
+    counts: [u8; 14],
+    highest: u8,
+    flush: bool,
+    straight: bool,
+    pairs: u8,
+    triples: u8,
+    quads: u8,
+}
 
-        for card in hands.0 {
-            let number: usize = card.number.into();
-            if seen[number] {
-                return false;
-            }
-            seen[number] = true;
+impl HandStats {
+    fn from(hands: &Hands) -> Self {
+        let mut counts: [u8; 14] = [0; 14]; // 0 は未使用、1..13 を利用
+        let mut suit_counts: [u8; 4] = [0; 4];
+        let mut numbers: [u8; 5] = [0; 5];
+
+        for (idx, card) in hands.iter().enumerate() {
+            counts[card.number as usize] += 1;
+            suit_counts[card.suit as usize] += 1;
+            numbers[idx] = card.number;
         }
 
-        // Aで終わるストレートを考慮するため、10..14をチェックする
-        seen[14] = seen[1];
+        numbers.sort_unstable();
+        let flush = suit_counts.iter().any(|&c| c == 5);
+        let highest = *numbers.last().unwrap();
 
-        let mut sum: usize = seen[0..5].iter().filter(|&&b| b).count();
-        for i in 0..10 {
-            sum -= seen[i] as usize;
-            sum += seen[i + 5] as usize;
-
-            if sum == 5 {
-                return true;
+        let mut pairs = 0u8;
+        let mut triples = 0u8;
+        let mut quads = 0u8;
+        for &c in counts.iter().skip(1) {
+            match c {
+                2 => pairs += 1,
+                3 => triples += 1,
+                4 => quads += 1,
+                _ => {}
             }
         }
 
-        false
+        HandStats {
+            counts,
+            highest,
+            flush,
+            straight: Self::calc_straight(numbers),
+            pairs,
+            triples,
+            quads,
+        }
     }
 
-    #[allow(dead_code, unused_variables)]
-    fn is_flush(hands: &Hands) -> bool {
-        unimplemented!();
+    fn is_one_pair(&self) -> bool {
+        self.pairs == 1
     }
-    #[allow(dead_code, unused_variables)]
-    fn is_full_house(hands: &Hands) -> bool {
-        unimplemented!();
+
+    fn is_two_pair(&self) -> bool {
+        self.pairs == 2
     }
-    #[allow(dead_code, unused_variables)]
-    fn is_four_card(hands: &Hands) -> bool {
-        unimplemented!();
+
+    fn is_three_card(&self) -> bool {
+        self.triples == 1
     }
-    #[allow(dead_code, unused_variables)]
-    fn is_straight_flush(hands: &Hands) -> bool {
-        unimplemented!();
+
+    fn is_four_card(&self) -> bool {
+        self.quads == 1
     }
-    #[allow(dead_code, unused_variables)]
-    fn is_loyal_straght_flush(hands: &Hands) -> bool {
-        unimplemented!();
+
+    fn is_full_house(&self) -> bool {
+        self.triples == 1 && self.pairs == 1
+    }
+
+    fn is_flush(&self) -> bool {
+        self.flush
+    }
+
+    fn is_straight(&self) -> bool {
+        self.straight
+    }
+
+    fn is_straight_flush(&self) -> bool {
+        self.is_flush() && self.is_straight()
+    }
+
+    fn is_royal_straight_flush(&self) -> bool {
+        self.is_straight_flush()
+            && self.counts[1] == 1
+            && self.counts[10] == 1
+            && self.counts[11] == 1
+            && self.counts[12] == 1
+            && self.counts[13] == 1
+    }
+
+    fn calc_straight(nums: [u8; 5]) -> bool {
+        // 通常ストレート: 連続差がすべて 1
+        let consecutive = nums.windows(2).all(|w| w[1] == w[0] + 1);
+        if consecutive {
+            return true;
+        }
+
+        // 例外パターン: ホイール A2345、ブロードウェイ TJQKA
+        nums == [1, 2, 3, 4, 5] || nums == [1, 10, 11, 12, 13]
     }
 }
 
@@ -254,16 +282,13 @@ impl DerefMut for Hands {
 
 impl Hands {
     fn new_from_deck(deck: &mut Deck) -> Self {
-        Hands(
-            [
-                deck.draw(),
-                deck.draw(),
-                deck.draw(),
-                deck.draw(),
-                deck.draw(),
-
-            ]
-        )
+        Hands([
+            deck.draw(),
+            deck.draw(),
+            deck.draw(),
+            deck.draw(),
+            deck.draw(),
+        ])
     }
 
     fn exchange(&mut self, deck: &mut Deck, card: Card) {
@@ -326,10 +351,38 @@ mod test {
 
     #[test]
     fn straight() {
-        let hands = Hands::straight(Suit::Heart, 1);
-        let rank = hands.rank();
+        let hands = hand![Heart 1, Spade 2, Clover 3, Diamond 4, Heart 5];
+        assert_eq!(hands.rank(), Rank::Straight);
+    }
 
-        assert_eq!(rank, Rank::Straight);
+    #[test]
+    fn straight_flush() {
+        let hands = Hands::straight(Suit::Spade, 5);
+        assert_eq!(hands.rank(), Rank::StraightFlush);
+    }
+
+    #[test]
+    fn royal_straight_flush() {
+        let hands = Hands::royal(Suit::Diamond);
+        assert_eq!(hands.rank(), Rank::RoyalStraightFlush);
+    }
+
+    #[test]
+    fn four_card() {
+        let hands = hand![Heart 9, Spade 9, Clover 9, Diamond 9, Heart 2];
+        assert_eq!(hands.rank(), Rank::FourCard);
+    }
+
+    #[test]
+    fn full_house() {
+        let hands = hand![Heart 3, Spade 3, Clover 3, Diamond 8, Heart 8];
+        assert_eq!(hands.rank(), Rank::FullHouse);
+    }
+
+    #[test]
+    fn flush() {
+        let hands = hand![Spade 2, Spade 6, Spade 9, Spade 11, Spade 13];
+        assert_eq!(hands.rank(), Rank::Flush);
     }
 
     #[test]
@@ -345,6 +398,30 @@ mod test {
         let hands = Hands::royal(Suit::Heart);
         let rank = hands.rank();
 
-        assert_eq!(rank, Rank::Straight);
+        assert_eq!(rank, Rank::RoyalStraightFlush);
+    }
+
+    #[test]
+    fn three_card() {
+        let hands = hand![Heart 4, Spade 4, Diamond 4, Clover 7, Heart 9];
+        assert_eq!(hands.rank(), Rank::ThreeCard);
+    }
+
+    #[test]
+    fn two_pair() {
+        let hands = hand![Heart 5, Spade 5, Diamond 12, Clover 12, Heart 3];
+        assert_eq!(hands.rank(), Rank::TwoPair);
+    }
+
+    #[test]
+    fn one_pair() {
+        let hands = hand![Heart 5, Spade 5, Diamond 7, Clover 9, Heart 11];
+        assert_eq!(hands.rank(), Rank::OnePair);
+    }
+
+    #[test]
+    fn high_card() {
+        let hands = hand![Heart 2, Spade 5, Diamond 7, Clover 9, Heart 12];
+        assert_eq!(hands.rank(), Rank::HighCard(12));
     }
 }
