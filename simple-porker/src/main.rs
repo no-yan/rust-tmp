@@ -254,17 +254,16 @@ impl DerefMut for Hands {
 
 impl Hands {
     fn new_from_deck(deck: &mut Deck) -> Self {
-        let mut hands = Hands(
-            [Card {
-                suit: Suit::Heart,
-                number: 1,
-            }; 5],
-        );
-        for i in 0..5 {
-            hands[i] = deck.draw();
-        }
+        Hands(
+            [
+                deck.draw(),
+                deck.draw(),
+                deck.draw(),
+                deck.draw(),
+                deck.draw(),
 
-        hands
+            ]
+        )
     }
 
     fn exchange(&mut self, deck: &mut Deck, card: Card) {
