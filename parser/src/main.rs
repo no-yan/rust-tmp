@@ -44,8 +44,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 //
 //  四則演算を行うには、演算子を評価するときに、stackから2つpopして、それらを計算することで結果を得られる
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-    let input = input.into_iter();
-
     // 1. 計算の順序
     //
     // (*, /) → (+, -)
@@ -59,6 +57,41 @@ fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
     // MulOp     = "*" | "/"
     // UnaryExpr = Num
 
+    let rpn = infix_to_rpn(input);
+    evaluate_rpn(rpn)
+}
+
+fn apply_op(tok: Token, lhs: i32, rhs: i32) -> i32 {
+    match tok {
+        Token::Plus => lhs + rhs,
+        Token::Minus => lhs - rhs,
+        Token::Mul => lhs * rhs,
+        Token::Div => lhs / rhs,
+        _ => unimplemented!(),
+    }
+}
+
+fn evaluate_rpn(rpn: Vec<Token>) -> Result<i32, Box<dyn Error>> {
+    let mut stack: Vec<i32> = Vec::new();
+
+    for tok in rpn.into_iter() {
+        match tok {
+            Token::Num(n) => stack.push(n),
+            op @ Token::Plus | op @ Token::Minus | op @ Token::Mul | op @ Token::Div => {
+                let rhs = stack.pop().ok_or("stack underflow (rhs)")?;
+                let lhs = stack.pop().ok_or("stack underflow (lhs)")?;
+                let val = apply_op(op, lhs, rhs);
+                stack.push(val);
+            }
+            _ => unreachable!(""),
+        }
+    }
+
+    assert!(stack.len() == 1);
+    Ok(stack[0])
+}
+
+fn infix_to_rpn(input: Vec<Token>) -> Vec<Token> {
     let mut output = vec![];
     let mut ops_stack: Vec<Token> = vec![];
 
@@ -75,6 +108,7 @@ fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
     //      Output: [3, 3], Op: "+"　→ Output: [6]
     //
 
+    let input = input.into_iter();
     for tok in input {
         match tok {
             Token::Num(_) => output.push(tok),
@@ -94,33 +128,7 @@ fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
         output.push(op);
     }
 
-    fn apply(tok: Token, lhs: i32, rhs: i32) -> i32 {
-        match tok {
-            Token::Plus => lhs + rhs,
-            Token::Minus => lhs - rhs,
-            Token::Mul => lhs * rhs,
-            Token::Div => lhs / rhs,
-            _ => unimplemented!(),
-        }
-    }
-
-    let mut stack: Vec<i32> = Vec::new();
-
-    for tok in output.into_iter() {
-        match tok {
-            Token::Num(n) => stack.push(n),
-            op @ Token::Plus | op @ Token::Minus | op @ Token::Mul | op @ Token::Div => {
-                let rhs = stack.pop().ok_or("stack underflow (rhs)")?;
-                let lhs = stack.pop().ok_or("stack underflow (lhs)")?;
-                let val = apply(op, lhs, rhs);
-                stack.push(val);
-            }
-            _ => unreachable!(""),
-        }
-    }
-
-    assert!(stack.len() == 1);
-    Ok(stack[0])
+    output
 }
 
 #[derive(Debug, PartialEq, Clone)]
