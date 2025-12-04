@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 // 出力用のベクタと、演算子を一時的に保管するStackを用意する。
 // 入力からトークンをpopする
 // 1. 数値: 出力にpush
-// 2. 演算子: 
+// 2. 演算子:
 //      Stackのtopがより高い優先順位を持つ場合:
 //          stackをpop, 出力にpush
 //      Stackにpush
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
     let input = input.into_iter();
 
-    // 1. 計算の順序 
+    // 1. 計算の順序
     //
     // (*, /) → (+, -)
     //
@@ -58,66 +58,69 @@ fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
     // AddOp     = "+" | "-"
     // MulOp     = "*" | "/"
     // UnaryExpr = Num
-    
+
     let mut output = vec![];
-    let mut ops_stack = vec![];
+    let mut ops_stack: Vec<Token> = vec![];
 
     // 入力が空になるまで、次のことを続ける
     // 1. トークンを一つ読み出す
     // 2. トークン種別に応じて次のことを行う
     //    a. 数値: output.push
     //    b. 演算子: ops_stack.push
-    // 
+    //
     // 空になったら、出力を評価する
     // 出力に入った演算子は動かないため、これは次のように最適化できる
     // - 演算子をoutputにpushしようとするたび、その代わりにoutputを2回popし、演算を適用する
-    // - e.g.  
+    // - e.g.
     //      Output: [3, 3], Op: "+"　→ Output: [6]
     //
 
     for tok in input {
         match tok {
-            Token::Num(n) => output.push(n),
-            Token::Plus => {
+            Token::Num(_) => output.push(tok),
+            Token::Plus | Token::Minus | Token::Mul | Token::Div => {
+                while let Some(op) = ops_stack.last()
+                    && op.precedence() <= tok.precedence()
+                {
+                    let op = ops_stack.pop().unwrap();
+                    output.push(op);
+                }
                 ops_stack.push(tok);
             }
             _ => todo!(),
         }
     }
+    while let Some(op) = ops_stack.pop() {
+        output.push(op);
+    }
 
-    for op in ops_stack.into_iter().rev() {
-        match op {
-            Token::Plus => {
-                let (Some(rhs), Some(lhs)) = (output.pop(), output.pop()) else {
-                    panic!();
-                };
-                output.push(rhs + lhs);
-            }
-            _ => todo!(),
+    fn apply(tok: Token, lhs: i32, rhs: i32) -> i32 {
+        match tok {
+            Token::Plus => lhs + rhs,
+            Token::Minus => lhs - rhs,
+            Token::Mul => lhs * rhs,
+            Token::Div => lhs / rhs,
+            _ => unimplemented!(),
         }
     }
 
-    assert!(output.len() == 1);
-    println!("{output:?}");
+    let mut stack: Vec<i32> = Vec::new();
 
-    Ok(output[0])
-    // let Some(Token::Num(n)) = input.next() else {
-    //     return  Err("Not num".into());
-    // };
-    //
-    // let mut result = n;
-    //
-    // while let (Some(op), Some(Token::Num(right))) = (input.next(), input.next()) {
-    //     result = match op {
-    //         Token::Plus => result + right,
-    //         Token::Minus => result - right,
-    //         Token::Mul => result * right,
-    //         Token::Div => result / right,
-    //         _ => return Err("unimplemented".into()),
-    //     };
-    // }
-    //
-    // Ok(result)
+    for tok in output.into_iter() {
+        match tok {
+            Token::Num(n) => stack.push(n),
+            op @ Token::Plus | op @ Token::Minus | op @ Token::Mul | op @ Token::Div => {
+                let rhs = stack.pop().ok_or("stack underflow (rhs)")?;
+                let lhs = stack.pop().ok_or("stack underflow (lhs)")?;
+                let val = apply(op, lhs, rhs);
+                stack.push(val);
+            }
+            _ => unreachable!(""),
+        }
+    }
+
+    assert!(stack.len() == 1);
+    Ok(stack[0])
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -129,6 +132,18 @@ enum Token {
 
     Num(i32),
     Eof, // レキサーの内部表現として使用する
+}
+
+impl Token {
+    fn precedence(&self) -> i32 {
+        use crate::Token::*;
+
+        match self {
+            Plus | Minus => 1,
+            Mul | Div => 2,
+            _ => 999,
+        }
+    }
 }
 
 struct Lexer<'a> {
@@ -240,6 +255,16 @@ mod tests {
         let result = process(tokens);
 
         assert_eq!(result.unwrap(), 3);
+    }
+
+    #[test]
+    fn difference() {
+        let input = "1 - 2 - 3";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = process(tokens);
+
+        assert_eq!(result.unwrap(), -4);
     }
 
     #[test]
