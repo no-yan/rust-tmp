@@ -1,0 +1,23 @@
+#[derive(Debug, PartialEq, Clone)]
+pub enum Token {
+    Plus,
+    Minus,
+    Mul,
+    Div,
+
+    Num(i32),
+    Eof, // レキサーの内部表現として使用する
+}
+
+impl Token {
+    // The higher precedes the lower.
+    pub fn precedence(&self) -> i32 {
+        use crate::Token::*;
+
+        match self {
+            Plus | Minus => 1,
+            Mul | Div => 2,
+            _ => 999,
+        }
+    }
+}
