@@ -21,18 +21,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-// TOOD:
-// ゴール: 優先順位をつけた演算をサポートする
-// 1. 演算子の計算順序を書き下す
-// 2. 演算子の処理の実装方法を9ccで確認する
-// 3. goの実装手順を確認する
-// 4. +だけの演算をサポートするShunting yard algorithmを実装する
-// 5. -をサポート
-// 6. トークンの優先順位をサポートし、演算規則をサポート
-// 7. カッコをサポートする
+// TODO:
+// ゴール: かっこつきの演算をサポートする
+// ## 調査:
+// Shunting yard algorithmでカッコの演算処理をどうするか確認する
 //
-// Stackの実装手順
-// 実装方針の調査
+// ## 実装:
+// 1. トークン"(", ")"を追加する
+// 2. トークナイズ処理を追加する
+// 3. Calculatorの判定にカッコの処理を追加する
 //
 struct Calculator;
 
@@ -195,5 +192,25 @@ mod tests {
         let result = Calculator::calc(tokens).unwrap();
 
         assert_eq!(result, 3)
+    }
+
+    #[test]
+    fn with_paren() {
+        let input = "(1+2)";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = Calculator::calc(tokens).unwrap();
+
+        assert_eq!(result, 3);
+    }
+
+    #[test]
+    fn with_paren_precedence() {
+        let input = "(1+2)*3";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = Calculator::calc(tokens).unwrap();
+
+        assert_eq!(result, 3);
     }
 }
