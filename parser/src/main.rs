@@ -80,7 +80,7 @@ fn process(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
             Token::Num(_) => output.push(tok),
             Token::Plus | Token::Minus | Token::Mul | Token::Div => {
                 while let Some(op) = ops_stack.last()
-                    && op.precedence() <= tok.precedence()
+                    && op.precedence() >= tok.precedence()
                 {
                     let op = ops_stack.pop().unwrap();
                     output.push(op);
@@ -135,6 +135,7 @@ enum Token {
 }
 
 impl Token {
+    // The higher precedes the lower.
     fn precedence(&self) -> i32 {
         use crate::Token::*;
 
