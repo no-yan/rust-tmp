@@ -34,25 +34,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 // Stackの実装手順
 // 実装方針の調査
 //
-// Shunting yard algorithm
-//
-// 演算子がオペランドの間におかれる構文を解析するアルゴリズム。得られる出力は逆ポーランド記法になる。
-// 以下の手順で解析する:
-// 出力用のベクタと、演算子を一時的に保管するStackを用意する。
-// 入力からトークンをpopする
-// 1. 数値: 出力にpush
-// 2. 演算子:
-//      Stackのtopがより高い優先順位を持つ場合:
-//          stackをpop, 出力にpush
-//      Stackにpush
-// 3. 入力が空になったら:
-//      Stackを空になるまでpopし出力にpushする
-//
-//  四則演算を行うには、演算子を評価するときに、stackから2つpopして、それらを計算することで結果を得られる
 struct Calculator;
 
+/// Shunting yard algorithm (See: https://en.wikipedia.org/wiki/Shunting_yard_algorithm)
+///
+/// 演算子がオペランドの間におかれる構文を解析するアルゴリズム。得られる出力は逆ポーランド記法になる。
+/// 以下の手順で出力を得る:
+/// (出力用のベクタと、演算子を一時的に保管するStackを用意する)
+/// 入力からトークンをpopする
+/// 1. 数値: 出力にpush
+/// 2. 演算子:
+///      Stackのtopがより高い優先順位を持つ場合:
+///          stackをpop, 出力にpush
+///      Stackにpush
+/// 3. 入力が空になったら:
+///      Stackを空になるまでpopし出力にpushする
 impl Calculator {
     fn calc(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
+
         // 1. 計算の順序
         //
         // (*, /) → (+, -)
@@ -79,13 +78,6 @@ impl Calculator {
         // 2. トークン種別に応じて次のことを行う
         //    a. 数値: output.push
         //    b. 演算子: ops_stack.push
-        //
-        // 空になったら、出力を評価する
-        // 出力に入った演算子は動かないため、これは次のように最適化できる
-        // - 演算子をoutputにpushしようとするたび、その代わりにoutputを2回popし、演算を適用する
-        // - e.g.
-        //      Output: [3, 3], Op: "+"　→ Output: [6]
-        //
 
         let input = input.into_iter();
         for tok in input {
