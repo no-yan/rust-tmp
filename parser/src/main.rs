@@ -98,15 +98,20 @@ impl Calculator {
                 }
                 Token::LeftParen => ops_stack.push(tok),
                 Token::RightParen => {
-                    while let Some(op) = ops_stack.pop()
-                        && !matches!(op, Token::LeftParen)
-                    {
-                        output.push(op);
+                    loop {
+                        match ops_stack.pop() {
+                            Some(Token::LeftParen) => break,
+                            Some(op) => output.push(op),
+                            None => panic!("Unmatched right parenthesis"),
+                        }
                     }
                 }
             }
         }
         while let Some(op) = ops_stack.pop() {
+            if matches!(op, Token::LeftParen) {
+                panic!("Unmatched left parenthesis");
+            }
             output.push(op);
         }
 
@@ -226,5 +231,23 @@ mod tests {
         let result = Calculator::calc(tokens).unwrap();
 
         assert_eq!(result, 9);
+    }
+
+    #[test]
+    #[should_panic]
+    fn unmatched_left_paren() {
+        let input = "(1+1";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let _ = Calculator::calc(tokens).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn unmatched_right_paren() {
+        let input = "1+1)";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let _ = Calculator::calc(tokens).unwrap();
     }
 }
