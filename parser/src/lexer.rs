@@ -74,7 +74,7 @@ impl<'a> Lexer<'a> {
                 let num = self.next_number();
                 Num(num)
             }
-            c => return Err(LexicalError::InvalidToken(format!("Invalid token: {}", c))),
+            c => return Err(LexicalError::InvalidToken(c.to_string())),
         };
 
         Ok(tok)
