@@ -6,7 +6,6 @@ use std::fmt;
 pub enum LexicalError {
     InvalidToken(String),
     Eof,
-
 }
 
 impl Error for LexicalError {}
@@ -60,7 +59,7 @@ impl<'a> Lexer<'a> {
 
         let char = match self.bump() {
             Some(c) => c,
-            None => return Err(LexicalError::Eof.into()),
+            None => return Err(LexicalError::Eof),
         };
 
         let tok = match char {

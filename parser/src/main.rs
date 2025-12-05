@@ -40,16 +40,6 @@ struct Calculator;
 /// Shunting yard algorithm (See: https://en.wikipedia.org/wiki/Shunting_yard_algorithm)
 ///
 /// 演算子がオペランドの間におかれる構文を解析するアルゴリズム。得られる出力は逆ポーランド記法になる。
-/// 以下の手順で出力を得る:
-/// (出力用のベクタと、演算子を一時的に保管するStackを用意する)
-/// 入力からトークンをpopする
-/// 1. 数値: 出力にpush
-/// 2. 演算子:
-///      Stackのtopがより高い優先順位を持つ場合:
-///          stackをpop, 出力にpush
-///      Stackにpush
-/// 3. 入力が空になったら:
-///      Stackを空になるまでpopし出力にpushする
 impl Calculator {
     fn calc(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
         // 1. 計算の順序
@@ -65,6 +55,16 @@ impl Calculator {
         // MulOp     = "*" | "/"
         // UnaryExpr = Num
 
+        // 以下の手順で出力を得る:
+        // (出力用のベクタと、演算子を一時的に保管するStackを用意する)
+        // 入力からトークンをpopする
+        // 1. 数値: 出力にpush
+        // 2. 演算子:
+        //    a. Stackのtopがより高い優先順位を持つ場合:
+        //       - stackをpop, 出力にpush
+        //    b. Stackにpush
+        // 3. 入力が空になったら:
+        //    - Stackを空になるまでpopし出力にpushする
         let rpn = Self::infix_to_rpn(input);
         Self::evaluate_rpn(rpn)
     }
@@ -97,15 +97,13 @@ impl Calculator {
                     ops_stack.push(tok);
                 }
                 Token::LeftParen => ops_stack.push(tok),
-                Token::RightParen => {
-                    loop {
-                        match ops_stack.pop() {
-                            Some(Token::LeftParen) => break,
-                            Some(op) => output.push(op),
-                            None => panic!("Unmatched right parenthesis"),
-                        }
+                Token::RightParen => loop {
+                    match ops_stack.pop() {
+                        Some(Token::LeftParen) => break,
+                        Some(op) => output.push(op),
+                        None => panic!("Unmatched right parenthesis"),
                     }
-                }
+                },
             }
         }
         while let Some(op) = ops_stack.pop() {
