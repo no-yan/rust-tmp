@@ -100,7 +100,6 @@ impl Calculator {
                         output.push(op);
                     }
                 }
-                _ => todo!(),
             }
         }
         while let Some(op) = ops_stack.pop() {

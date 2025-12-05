@@ -9,8 +9,6 @@ pub enum Token {
 
     LeftParen,
     RightParen,
-
-    Eof, // レキサーの内部表現として使用する
 }
 
 impl Token {
@@ -22,7 +20,7 @@ impl Token {
             Plus | Minus => 1,
             Mul | Div => 2,
             LeftParen | RightParen => 3,
-            _ => 999,
+            Num(_) => 999,
         }
     }
 }

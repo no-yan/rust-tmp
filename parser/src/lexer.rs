@@ -1,5 +1,26 @@
 use crate::Token;
 use std::error::Error;
+use std::fmt;
+
+#[derive(Debug)]
+pub enum LexicalError {
+    InvalidToken(String),
+    Eof,
+
+}
+
+impl Error for LexicalError {}
+
+impl fmt::Display for LexicalError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use crate::lexer::LexicalError::*;
+
+        match self {
+            InvalidToken(s) => write!(f, "Invalid token: {}", s),
+            Eof => write!(f, "End of File"),
+        }
+    }
+}
 
 pub struct Lexer<'a> {
     pos: usize,
@@ -19,10 +40,11 @@ impl<'a> Lexer<'a> {
     pub fn lex(&mut self) -> Result<Vec<Token>, Box<dyn Error>> {
         let mut tokens = Vec::new();
         loop {
-            let tok = self.next_token()?;
+            let tok = self.next_token();
             match tok {
-                Token::Eof => break,
-                t => tokens.push(t),
+                Ok(t) => tokens.push(t),
+                Err(LexicalError::Eof) => break,
+                Err(e) => return Err(e.into()),
             };
         }
 
@@ -31,14 +53,14 @@ impl<'a> Lexer<'a> {
 
     /// 現在位置から次の1トークンを読む
     /// 不正な文字に遭遇したらErrを返す
-    pub fn next_token(&mut self) -> Result<Token, Box<dyn Error>> {
+    pub fn next_token(&mut self) -> Result<Token, LexicalError> {
         use crate::token::Token::*;
 
         self.skip_whitespace();
 
         let char = match self.bump() {
             Some(c) => c,
-            None => return Ok(Token::Eof),
+            None => return Err(LexicalError::Eof.into()),
         };
 
         let tok = match char {
@@ -52,7 +74,7 @@ impl<'a> Lexer<'a> {
                 let num = self.next_number();
                 Num(num)
             }
-            c => return Err(format!("Invalid token: {}", c).into()),
+            c => return Err(LexicalError::InvalidToken(format!("Invalid token: {}", c))),
         };
 
         Ok(tok)
