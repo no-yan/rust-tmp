@@ -13,10 +13,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut lexer = Lexer::new(&buf);
     let tokens = lexer.lex()?;
 
-    match Calculator::calc(tokens) {
-        Ok(val) => println!("{}", val),
-        Err(err) => eprintln!("{:?}", err),
-    };
+    let v = Calculator::calc(tokens)?;
+    println!("{}", v);
 
     Ok(())
 }
