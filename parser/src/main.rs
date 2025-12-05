@@ -48,7 +48,6 @@ struct Calculator;
 ///      Stackを空になるまでpopし出力にpushする
 impl Calculator {
     fn calc(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-
         // 1. 計算の順序
         //
         // (*, /) → (+, -)
@@ -74,7 +73,10 @@ impl Calculator {
         // 1. トークンを一つ読み出す
         // 2. トークン種別に応じて次のことを行う
         //    a. 数値: output.push
-        //    b. 演算子: ops_stack.push
+        //    b. 演算子 op1:
+        //      while(スタックに演算子op2が存在し、'('ではなく、opより優先順位が高い):
+        //          output.push(op2)
+        //      ops_stack.push(op1)
 
         let input = input.into_iter();
         for tok in input {
@@ -82,12 +84,21 @@ impl Calculator {
                 Token::Num(_) => output.push(tok),
                 Token::Plus | Token::Minus | Token::Mul | Token::Div => {
                     while let Some(op) = ops_stack.last()
+                        && !matches!(op, Token::LeftParen)
                         && op.precedence() >= tok.precedence()
                     {
                         let op = ops_stack.pop().unwrap();
                         output.push(op);
                     }
                     ops_stack.push(tok);
+                }
+                Token::LeftParen => ops_stack.push(tok),
+                Token::RightParen => {
+                    while let Some(op) = ops_stack.pop()
+                        && !matches!(op, Token::LeftParen)
+                    {
+                        output.push(op);
+                    }
                 }
                 _ => todo!(),
             }
@@ -211,6 +222,6 @@ mod tests {
         let tokens = lexer.lex().unwrap();
         let result = Calculator::calc(tokens).unwrap();
 
-        assert_eq!(result, 3);
+        assert_eq!(result, 9);
     }
 }

@@ -46,6 +46,8 @@ impl<'a> Lexer<'a> {
             '-' => Minus,
             '*' => Mul,
             '/' => Div,
+            '(' => LeftParen,
+            ')' => RightParen,
             c if c.is_ascii_digit() => {
                 let num = self.next_number();
                 Num(num)
@@ -127,5 +129,14 @@ mod test {
         let result = lexer.lex().unwrap();
 
         assert_eq!(result, vec![Num(123)]);
+    }
+
+    #[test]
+    fn parenthesis() {
+        let input = "(1)";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(result, vec![LeftParen, Num(1), RightParen]);
     }
 }

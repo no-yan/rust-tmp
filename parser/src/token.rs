@@ -6,6 +6,10 @@ pub enum Token {
     Div,
 
     Num(i32),
+
+    LeftParen,
+    RightParen,
+
     Eof, // レキサーの内部表現として使用する
 }
 
@@ -17,6 +21,7 @@ impl Token {
         match self {
             Plus | Minus => 1,
             Mul | Div => 2,
+            LeftParen | RightParen => 3,
             _ => 999,
         }
     }
