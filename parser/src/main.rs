@@ -234,7 +234,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn unmatched_left_paren() {
-        let input = "(1+1";
+        let input = "(1+2";
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex().unwrap();
         let _ = Calculator::calc(tokens).unwrap();
@@ -243,7 +243,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn unmatched_right_paren() {
-        let input = "1+1)";
+        let input = "1+2)";
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex().unwrap();
         let _ = Calculator::calc(tokens).unwrap();
