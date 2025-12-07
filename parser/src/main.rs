@@ -1,6 +1,6 @@
 use std::error::Error;
-use std::iter::Peekable;
 use std::fmt;
+use std::iter::Peekable;
 
 mod lexer;
 mod token;
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut lexer = Lexer::new(&buf);
     let tokens = lexer.lex()?;
 
-    let ast =  Parser::new(tokens).parse()?;
+    let ast = Parser::new(tokens).parse()?;
     let v = ast.eval()?;
     println!("{}", v);
 
@@ -40,72 +40,129 @@ fn main() -> Result<(), Box<dyn Error>> {
 //
 // ### 実装
 // - [x] EBNFに単項演算子を追加
-// - [ ] テストを新しいAPIに変更する
-// - [ ] exprのパースを実装する
-// - [ ] primaryのパースを実装する
-// - [ ] Token::eval()を実装する
-// - []
-//
-//
+// - [x] テストを新しいAPIに変更する
+// - [x] exprのパースを実装する
+// - [x] primaryのパースを実装する
+// - [x] Token::eval()を実装する
 
-
+#[derive(Debug)]
 enum Expression {
-    Unary { op: Token, value: i32 },
+    Unary {
+        op: Token,
+        expr: Box<Expression>,
+    },
     Binary {
         lhs: Box<Expression>,
         op: Token,
         rhs: Box<Expression>,
-    }
+    },
+    Value(i32),
 }
 
 impl Expression {
     fn eval(&self) -> Result<i32, Box<dyn Error>> {
-        unimplemented!()
+        match self {
+            Expression::Unary { op, expr } => Ok(match op {
+                Token::Minus => -expr.eval()?,
+                _ => unreachable!(),
+            }),
+            Expression::Binary { lhs, op, rhs } => Ok(match op {
+                Token::Plus => lhs.eval()? + rhs.eval()?,
+                Token::Minus => lhs.eval()? - rhs.eval()?,
+                Token::Mul => lhs.eval()? * rhs.eval()?,
+                Token::Div => lhs.eval()? / rhs.eval()?,
+                _ => unreachable!(""),
+            }),
+            Expression::Value(v) => Ok(*v),
+        }
     }
 }
-
 
 #[derive(Debug)]
-enum ParseError {
-
-}
+enum ParseError {}
 
 type ParseResult<T> = Result<T, ParseError>;
-impl Error for ParseError{}
+impl Error for ParseError {}
 impl std::fmt::Display for ParseError {
-fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         unimplemented!()
     }
 }
 
-
 /// ## EBNF
-/// Program -> Expr(0)
-/// Expr(p) ->  Primary { BinOp Expr(p) }
+/// E -> Expr(0)
+/// Expr(p) ->  Primary { BinOp Expr(q) }
 /// Primary -> Unary Expr(q) | "(" E ")" | v
 /// BinOp   -> "+" | "-" | "*" | "/"
 /// Unary   -> "-"
-struct Parser{
+struct Parser {
     src: Peekable<std::vec::IntoIter<Token>>,
 }
 
 impl Parser {
-    fn new(src: Vec<Token>) -> Self{
-        Self{
-            src: src.into_iter().peekable()
+    fn new(src: Vec<Token>) -> Self {
+        Self {
+            src: src.into_iter().peekable(),
         }
     }
 
-    fn parse(&self) -> ParseResult<Expression> {
-        unimplemented!()
+    fn parse(&mut self) -> ParseResult<Expression> {
+        match self.expr(0) {
+            Ok(expr) => {
+                debug_assert!(self.src.next().is_none());
+                Ok(expr)
+            },
+            Err(e) => Err(e),
+        }
     }
 
-    fn expr() -> ParseResult<Expression>{
-        unimplemented!()
+    fn expr(&mut self, prec: u8) -> ParseResult<Expression> {
+        let mut lhs = self.primary()?;
+
+        while let Some(tok) = self.src.peek() {
+            if !tok.is_op() {
+                break;
+            }
+            if !tok.precedes(prec) {
+                break;
+            }
+            let tok = self.src.next().unwrap();
+
+            // NOTE:
+            // 右連結の演算子を導入する場合、同じPrecedenceもrhsに含めてよい
+            let rhs = self.expr(tok.prec() + 1)?;
+            lhs = Expression::Binary {
+                lhs: Box::new(lhs),
+                op: tok.clone(),
+                rhs: Box::new(rhs),
+            };
+        }
+
+        Ok(lhs)
     }
 
-    fn primary() -> ParseResult<Expression>{
-        unimplemented!()
+    fn primary(&mut self) -> ParseResult<Expression> {
+        let primary = match self.src.next() {
+            Some(Token::Num(n)) => Expression::Value(n),
+            Some(Token::Minus) => {
+                let expr = self.expr(4)?; // TODO: どこかに配置
+                Expression::Unary {
+                    op: Token::Minus,
+                    expr: Box::new(expr),
+                }
+            }
+            Some(Token::LeftParen) => {
+                let expr = self.expr(0)?;
+                let next  = self.src.next();
+                if !matches!(next, Some(Token::RightParen)) {
+                    panic!("Unmatched LeftParen");
+                }
+                    expr
+            }
+            _ => unreachable!("unknown parser error"),
+        };
+
+        Ok(primary)
     }
 }
 
@@ -122,7 +179,7 @@ mod tests {
 
     #[test]
     fn sum() {
-        let result = parse( "1 + 2");
+        let result = parse("1 + 2");
         assert_eq!(result, 3);
     }
 
