@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::iter::Peekable;
+use std::fmt;
 
 mod lexer;
 mod token;
@@ -20,7 +22,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut lexer = Lexer::new(&buf);
     let tokens = lexer.lex()?;
 
-    let v = Calculator::calc(tokens)?;
+    let ast =  Parser::new(tokens).parse()?;
+    let v = ast.eval()?;
     println!("{}", v);
 
     Ok(())
@@ -36,134 +39,73 @@ fn main() -> Result<(), Box<dyn Error>> {
 // - [ ] Precedence climbing parserのアルゴリズムを説明できるようになる
 //
 // ### 実装
-// - [ ] トークンに単項演算子を追加
-// - [ ] EBNFを再定義する
+// - [x] EBNFに単項演算子を追加
 // - [ ] テストを新しいAPIに変更する
 // - [ ] exprのパースを実装する
 // - [ ] primaryのパースを実装する
 // - [ ] Token::eval()を実装する
-// - [ ] opt: ASTをスナップショットテストできるようにする
+// - []
 //
 //
-struct Calculator;
-struct Parser;
-impl Parser {
-    fn new(src: &str) {}
 
-    fn parse(){}
 
-    fn expr(){}
-
-    fn primary() {}
+enum Expression {
+    Unary { op: Token, value: i32 },
+    Binary {
+        lhs: Box<Expression>,
+        op: Token,
+        rhs: Box<Expression>,
+    }
 }
 
-/// Shunting yard algorithm (See: https://en.wikipedia.org/wiki/Shunting_yard_algorithm)
-///
-/// 演算子がオペランドの間におかれる構文を解析するアルゴリズム。得られる出力は逆ポーランド記法になる。
-impl Calculator {
-    fn calc(input: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-        // 1. 計算の順序
-        //
-        // (*, /) → (+, -)
-        //
-        // 2. EBNF
-        //
-        // Expr      = UnaryExpr
-        //           | Expr BinaryOp Expr
-        // BinaryOp  = AddOp | MulOp
-        // AddOp     = "+" | "-"
-        // MulOp     = "*" | "/"
-        // UnaryExpr = Num
+impl Expression {
+    fn eval(&self) -> Result<i32, Box<dyn Error>> {
+        unimplemented!()
+    }
+}
 
-        // 以下の手順で出力を得る:
-        // (出力用のベクタと、演算子を一時的に保管するStackを用意する)
-        // 入力からトークンをpopする
-        // 1. 数値: 出力にpush
-        // 2. 演算子:
-        //    a. Stackのtopがより高い優先順位を持つ場合:
-        //       - stackをpop, 出力にpush
-        //    b. Stackにpush
-        // 3. 入力が空になったら:
-        //    - Stackを空になるまでpopし出力にpushする
-        let rpn = Self::infix_to_rpn(input);
-        Self::evaluate_rpn(rpn)
+
+#[derive(Debug)]
+enum ParseError {
+
+}
+
+type ParseResult<T> = Result<T, ParseError>;
+impl Error for ParseError{}
+impl std::fmt::Display for ParseError {
+fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!()
+    }
+}
+
+
+/// ## EBNF
+/// Program -> Expr(0)
+/// Expr(p) ->  Primary { BinOp Expr(p) }
+/// Primary -> Unary Expr(q) | "(" E ")" | v
+/// BinOp   -> "+" | "-" | "*" | "/"
+/// Unary   -> "-"
+struct Parser{
+    src: Peekable<std::vec::IntoIter<Token>>,
+}
+
+impl Parser {
+    fn new(src: Vec<Token>) -> Self{
+        Self{
+            src: src.into_iter().peekable()
+        }
     }
 
-    fn infix_to_rpn(input: Vec<Token>) -> Vec<Token> {
-        let mut output = vec![];
-        let mut ops_stack: Vec<Token> = vec![];
-
-        // 入力が空になるまで、次のことを続ける
-        // 1. トークンを一つ読み出す
-        // 2. トークン種別に応じて次のことを行う
-        //    a. 数値: output.push
-        //    b. 演算子 op1:
-        //      while(スタックに演算子op2が存在し、'('ではなく、opより優先順位が高い):
-        //          output.push(op2)
-        //      ops_stack.push(op1)
-
-        let input = input.into_iter();
-        for tok in input {
-            match tok {
-                Token::Num(_) => output.push(tok),
-                Token::Plus | Token::Minus | Token::Mul | Token::Div => {
-                    while let Some(op) = ops_stack.last()
-                        && !matches!(op, Token::LeftParen)
-                        && op.precedence() >= tok.precedence()
-                    {
-                        let op = ops_stack.pop().unwrap();
-                        output.push(op);
-                    }
-                    ops_stack.push(tok);
-                }
-                Token::LeftParen => ops_stack.push(tok),
-                Token::RightParen => loop {
-                    match ops_stack.pop() {
-                        Some(Token::LeftParen) => break,
-                        Some(op) => output.push(op),
-                        None => panic!("Unmatched right parenthesis"),
-                    }
-                },
-            }
-        }
-        while let Some(op) = ops_stack.pop() {
-            if matches!(op, Token::LeftParen) {
-                panic!("Unmatched left parenthesis");
-            }
-            output.push(op);
-        }
-
-        output
+    fn parse(&self) -> ParseResult<Expression> {
+        unimplemented!()
     }
 
-    fn evaluate_rpn(rpn: Vec<Token>) -> Result<i32, Box<dyn Error>> {
-        let mut stack: Vec<i32> = Vec::new();
-
-        for tok in rpn.into_iter() {
-            match tok {
-                Token::Num(n) => stack.push(n),
-                Token::Plus | Token::Minus | Token::Mul | Token::Div => {
-                    let rhs = stack.pop().ok_or("stack underflow (rhs)")?;
-                    let lhs = stack.pop().ok_or("stack underflow (lhs)")?;
-                    let val = Self::apply_op(tok, lhs, rhs);
-                    stack.push(val);
-                }
-                _ => unreachable!(""),
-            }
-        }
-
-        assert!(stack.len() == 1);
-        Ok(stack[0])
+    fn expr() -> ParseResult<Expression>{
+        unimplemented!()
     }
 
-    fn apply_op(tok: Token, lhs: i32, rhs: i32) -> i32 {
-        match tok {
-            Token::Plus => lhs + rhs,
-            Token::Minus => lhs - rhs,
-            Token::Mul => lhs * rhs,
-            Token::Div => lhs / rhs,
-            _ => unimplemented!(),
-        }
+    fn primary() -> ParseResult<Expression>{
+        unimplemented!()
     }
 }
 
@@ -171,111 +113,76 @@ impl Calculator {
 mod tests {
     use super::*;
 
-    #[test]
-    fn sum() {
-        let input = "1 + 2";
+    fn parse(input: &str) -> i32 {
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens);
+        let ast = Parser::new(tokens).parse().unwrap();
+        ast.eval().unwrap()
+    }
 
-        assert_eq!(result.unwrap(), 3);
+    #[test]
+    fn sum() {
+        let result = parse( "1 + 2");
+        assert_eq!(result, 3);
     }
 
     #[test]
     fn difference() {
-        let input = "1 - 2 - 3";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens);
-
-        assert_eq!(result.unwrap(), -4);
+        let result = parse("1 - 2 - 3");
+        assert_eq!(result, -4);
     }
 
     #[test]
     fn sum_3_operand() {
-        let input = "1 + 2 + 3";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens);
-
-        assert_eq!(result.unwrap(), 6);
+        let result = parse("1 + 2 + 3");
+        assert_eq!(result, 6);
     }
 
     #[test]
     fn prod_3_operand() {
-        let input = "1*2*3";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens);
-
-        assert_eq!(result.unwrap(), 6);
+        let result = parse("1*2*3");
+        assert_eq!(result, 6);
     }
 
     #[test]
     fn process_with_priority() {
-        let input = "1+2*3";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens);
-
-        assert_eq!(result.unwrap(), 7);
+        let result = parse("1+2*3");
+        assert_eq!(result, 7);
     }
 
     #[test]
     fn without_space() {
-        let input = "1+2";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens).unwrap();
-
+        let result = parse("1+2");
         assert_eq!(result, 3)
     }
 
     #[test]
     fn with_paren() {
-        let input = "(1+2)";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens).unwrap();
-
+        let result = parse("(1+2)");
         assert_eq!(result, 3);
     }
 
     #[test]
     fn with_paren_precedence() {
-        let input = "(1+2)*3";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens).unwrap();
-
+        let result = parse("(1+2)*3");
         assert_eq!(result, 9);
     }
 
     #[test]
     #[should_panic]
     fn unmatched_left_paren() {
-        let input = "(1+2";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let _ = Calculator::calc(tokens).unwrap();
+        let _ = parse("(1+2");
     }
 
     #[test]
     #[should_panic]
     fn unmatched_right_paren() {
-        let input = "1+2)";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let _ = Calculator::calc(tokens).unwrap();
+        let _ = parse("1+2)");
     }
 
     #[test]
     fn unary_minus() {
-        let input = "-1";
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let result = Calculator::calc(tokens).unwrap();
-
+        let result = parse("-1");
         assert_eq!(result, -1);
     }
 }
