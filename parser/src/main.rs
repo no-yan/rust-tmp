@@ -178,86 +178,76 @@ impl Parser {
 mod tests {
     use super::*;
 
-    fn parse(input: &str) -> i32 {
-        let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let ast = Parser::new(tokens).parse().unwrap();
-        ast.eval().unwrap()
-    }
-
-    fn parse_error(input: &str) -> Result<i32, Box<dyn Error>> {
+    fn parse(input: &str) -> Result<i32, Box<dyn Error>>{
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex().unwrap();
         let ast = Parser::new(tokens).parse().unwrap();
         ast.eval()
     }
 
-
     #[test]
     fn sum() {
-        let result = parse("1 + 2");
-        assert_eq!(result, 3);
+        let result = parse("1 + 2").map_err(|_| ());
+        assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn difference() {
-        let result = parse("1 - 2 - 3");
-        assert_eq!(result, -4);
+        let result = parse("1 - 2 - 3").map_err(|_| ());
+        assert_eq!(result, Ok(-4));
     }
 
     #[test]
     fn sum_3_operand() {
-        let result = parse("1 + 2 + 3");
-        assert_eq!(result, 6);
+        let result = parse("1 + 2 + 3").map_err(|_| ());
+        assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn prod_3_operand() {
-        let result = parse("1*2*3");
-        assert_eq!(result, 6);
+        let result = parse("1*2*3").map_err(|_| ());
+        assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn process_with_priority() {
-        let result = parse("1+2*3");
-        assert_eq!(result, 7);
+        let result = parse("1+2*3").map_err(|_| ());
+        assert_eq!(result, Ok(7));
     }
 
     #[test]
     fn without_space() {
-        let result = parse("1+2");
-        assert_eq!(result, 3)
+        let result = parse("1+2").map_err(|_| ());
+        assert_eq!(result, Ok(3))
     }
 
     #[test]
     fn with_paren() {
-        let result = parse("(1+2)");
-        assert_eq!(result, 3);
+        let result = parse("(1+2)").map_err(|_| ());
+        assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn with_paren_precedence() {
-        let result = parse("(1+2)*3");
-        assert_eq!(result, 9);
+        let result = parse("(1+2)*3").map_err(|_| ());
+        assert_eq!(result, Ok(9));
     }
 
     #[test]
     #[should_panic]
     fn unmatched_left_paren() {
-        let err  = parse("(1+2");
-        assert_eq!(err, SyntaxError::UnmatchedLeftParen);
+        parse("(1+2").unwrap();
     }
 
     #[test]
     #[should_panic]
     fn unmatched_right_paren() {
-        let err = parse_error("1+2)");
-        assert_eq!(err, SyntaxError::UnexpectedToken(Token::RightParen));
+        parse("1+2)").unwrap();
     }
 
     #[test]
     fn unary_minus() {
-        let result = parse("-1");
-        assert_eq!(result, -1);
+        let result = parse("-1").map_err(|_| ());
+        assert_eq!(result, Ok(-1));
     }
 }
