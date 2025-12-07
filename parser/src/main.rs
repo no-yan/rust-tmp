@@ -30,17 +30,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 // ゴール: 単項演算子をサポートする
 //
 // ### 調査:
-// 単項演算子をサポートするアルゴリズムを3つ知る
-// 実装の容易さ、拡張性を比較する
-// 一般的なパーサーの使用するアルゴリズムを調査する
+// - [x] 単項演算子をサポートするアルゴリズムを3つ知る
+// - [x] 実装の容易さ、拡張性を比較する
+// - [x] 一般的なパーサーの使用するアルゴリズムを調査する
+// - [ ] Precedence climbing parserのアルゴリズムを説明できるようになる
 //
 // ### 実装
-// - トークンに単項演算子を追加
-// - 構文木に単項演算子を追加する
-// - 演算処理を追加
+// - [ ] トークンに単項演算子を追加
+// - [ ] EBNFを再定義する
+// - [ ] テストを新しいAPIに変更する
+// - [ ] exprのパースを実装する
+// - [ ] primaryのパースを実装する
+// - [ ] Token::eval()を実装する
+// - [ ] opt: ASTをスナップショットテストできるようにする
 //
 //
 struct Calculator;
+struct Parser;
+impl Parser {
+    fn new(src: &str) {}
+
+    fn parse(){}
+
+    fn expr(){}
+
+    fn primary() {}
+}
 
 /// Shunting yard algorithm (See: https://en.wikipedia.org/wiki/Shunting_yard_algorithm)
 ///
@@ -252,5 +267,15 @@ mod tests {
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex().unwrap();
         let _ = Calculator::calc(tokens).unwrap();
+    }
+
+    #[test]
+    fn unary_minus() {
+        let input = "-1";
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let result = Calculator::calc(tokens).unwrap();
+
+        assert_eq!(result, -1);
     }
 }
