@@ -79,11 +79,14 @@ impl Expression {
 }
 
 #[derive(Debug)]
-enum ParseError {}
+enum SyntaxError {
+    UnmatchedLeftParen,
+    UnexpectedToken(Token),
+}
 
-type ParseResult<T> = Result<T, ParseError>;
-impl Error for ParseError {}
-impl std::fmt::Display for ParseError {
+type ParseResult<T> = Result<T, SyntaxError>;
+impl Error for SyntaxError {}
+impl std::fmt::Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         unimplemented!()
     }
@@ -109,9 +112,13 @@ impl Parser {
     fn parse(&mut self) -> ParseResult<Expression> {
         match self.expr(0) {
             Ok(expr) => {
-                debug_assert!(self.src.next().is_none());
-                Ok(expr)
-            },
+                if let Some(tok) = self.src.next()
+                {
+                    Err(SyntaxError::UnexpectedToken(tok))
+                } else {
+                    Ok(expr)
+                }
+            }
             Err(e) => Err(e),
         }
     }
@@ -153,12 +160,13 @@ impl Parser {
             }
             Some(Token::LeftParen) => {
                 let expr = self.expr(0)?;
-                let next  = self.src.next();
+                let next = self.src.next();
                 if !matches!(next, Some(Token::RightParen)) {
-                    panic!("Unmatched LeftParen");
+                    Err(SyntaxError::UnmatchedLeftParen)
+                } else {
+                    Ok(expr)
                 }
-                    expr
-            }
+            }?,
             _ => unreachable!("unknown parser error"),
         };
 
@@ -176,6 +184,14 @@ mod tests {
         let ast = Parser::new(tokens).parse().unwrap();
         ast.eval().unwrap()
     }
+
+    fn parse_error(input: &str) -> Result<i32, Box<dyn Error>> {
+        let mut lexer = Lexer::new(input);
+        let tokens = lexer.lex().unwrap();
+        let ast = Parser::new(tokens).parse().unwrap();
+        ast.eval()
+    }
+
 
     #[test]
     fn sum() {
@@ -228,13 +244,15 @@ mod tests {
     #[test]
     #[should_panic]
     fn unmatched_left_paren() {
-        let _ = parse("(1+2");
+        let err  = parse("(1+2");
+        assert_eq!(err, SyntaxError::UnmatchedLeftParen);
     }
 
     #[test]
     #[should_panic]
     fn unmatched_right_paren() {
-        let _ = parse("1+2)");
+        let err = parse_error("1+2)");
+        assert_eq!(err, SyntaxError::UnexpectedToken(Token::RightParen));
     }
 
     #[test]
