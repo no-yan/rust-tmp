@@ -7,8 +7,15 @@ use crate::lexer::Lexer;
 use crate::token::Token;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut buf = String::new();
-    std::io::stdin().read_line(&mut buf)?;
+    let args: Vec<String> = std::env::args().collect();
+    let buf = match args.iter().nth(1) {
+        Some(buf) => buf.clone(),
+        None => {
+            let mut buf = String::new();
+            std::io::stdin().read_line(&mut buf)?;
+            buf
+        }
+    };
 
     let mut lexer = Lexer::new(&buf);
     let tokens = lexer.lex()?;
