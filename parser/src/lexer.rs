@@ -1,4 +1,4 @@
-use crate::Token;
+use crate::token::Token;
 use std::error::Error;
 use std::fmt;
 
@@ -125,7 +125,7 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::Token::*;
+    use crate::token::Token::*;
 
     #[test]
     fn plus() {

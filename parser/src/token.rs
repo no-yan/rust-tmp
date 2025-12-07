@@ -14,7 +14,7 @@ pub enum Token {
 impl Token {
     // The higher precedes the lower.
     pub fn prec(&self) -> u8 {
-        use crate::Token::*;
+        use Token::*;
 
         match self {
             Plus | Minus => 1,
@@ -29,7 +29,7 @@ impl Token {
     }
 
     pub fn is_op(&self) -> bool {
-        use crate::Token::*;
+        use Token::*;
         matches!(self, Plus | Minus | Mul | Div)
     }
 }

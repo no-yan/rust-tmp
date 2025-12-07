@@ -1,12 +1,11 @@
-use std::iter::Peekable;
-
 mod error;
 mod lexer;
+mod parser;
 mod token;
 
-use crate::error::{CompilerError, SyntaxError};
+use crate::error::CompilerError;
 use crate::lexer::Lexer;
-use crate::token::Token;
+use crate::parser::Parser;
 
 fn main() -> Result<(), CompilerError> {
     let args: Vec<String> = std::env::args().collect();
@@ -44,123 +43,6 @@ fn main() -> Result<(), CompilerError> {
 // - [x] exprのパースを実装する
 // - [x] primaryのパースを実装する
 // - [x] Token::eval()を実装する
-
-#[derive(Debug)]
-enum Expression {
-    Unary {
-        op: Token,
-        expr: Box<Expression>,
-    },
-    Binary {
-        lhs: Box<Expression>,
-        op: Token,
-        rhs: Box<Expression>,
-    },
-    Value(i32),
-}
-
-impl Expression {
-    fn eval(&self) -> i32 {
-        match self {
-            Expression::Unary { op, expr } => match op {
-                Token::Minus => -expr.eval(),
-                _ => unreachable!(),
-            },
-            Expression::Binary { lhs, op, rhs } => match op {
-                Token::Plus => lhs.eval() + rhs.eval(),
-                Token::Minus => lhs.eval() - rhs.eval(),
-                Token::Mul => lhs.eval() * rhs.eval(),
-                Token::Div => lhs.eval() / rhs.eval(),
-                _ => unreachable!(),
-            },
-            Expression::Value(v) => *v,
-        }
-    }
-}
-
-type ParseResult<T> = Result<T, SyntaxError>;
-
-/// ## EBNF
-/// E -> Expr(0)
-/// Expr(p) ->  Primary { BinOp Expr(q) }
-/// Primary -> Unary Expr(q) | "(" E ")" | v
-/// BinOp   -> "+" | "-" | "*" | "/"
-/// Unary   -> "-"
-struct Parser {
-    src: Peekable<std::vec::IntoIter<Token>>,
-}
-
-impl Parser {
-    fn new(src: Vec<Token>) -> Self {
-        Self {
-            src: src.into_iter().peekable(),
-        }
-    }
-
-    fn parse(&mut self) -> ParseResult<Expression> {
-        match self.expr(0) {
-            Ok(expr) => {
-                if let Some(tok) = self.src.next()
-                {
-                    Err(SyntaxError::UnexpectedToken(tok))
-                } else {
-                    Ok(expr)
-                }
-            }
-            Err(e) => Err(e),
-        }
-    }
-
-    fn expr(&mut self, prec: u8) -> ParseResult<Expression> {
-        let mut lhs = self.primary()?;
-
-        while let Some(tok) = self.src.peek() {
-            if !tok.is_op() {
-                break;
-            }
-            if !tok.precedes(prec) {
-                break;
-            }
-            let tok = self.src.next().unwrap();
-
-            // NOTE:
-            // 右連結の演算子を導入する場合、同じPrecedenceもrhsに含めてよい
-            let rhs = self.expr(tok.prec() + 1)?;
-            lhs = Expression::Binary {
-                lhs: Box::new(lhs),
-                op: tok.clone(),
-                rhs: Box::new(rhs),
-            };
-        }
-
-        Ok(lhs)
-    }
-
-    fn primary(&mut self) -> ParseResult<Expression> {
-        let primary = match self.src.next() {
-            Some(Token::Num(n)) => Expression::Value(n),
-            Some(Token::Minus) => {
-                let expr = self.expr(4)?; // TODO: どこかに配置
-                Expression::Unary {
-                    op: Token::Minus,
-                    expr: Box::new(expr),
-                }
-            }
-            Some(Token::LeftParen) => {
-                let expr = self.expr(0)?;
-                let next = self.src.next();
-                if !matches!(next, Some(Token::RightParen)) {
-                    Err(SyntaxError::UnmatchedLeftParen)
-                } else {
-                    Ok(expr)
-                }
-            }?,
-            _ => unreachable!("unknown parser error"),
-        };
-
-        Ok(primary)
-    }
-}
 
 #[cfg(test)]
 mod tests {
