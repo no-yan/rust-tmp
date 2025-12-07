@@ -2,7 +2,9 @@ use crate::Token;
 use std::error::Error;
 use std::fmt;
 
-#[derive(Debug)]
+pub type LexResult<T> = Result<T, LexicalError>;
+
+#[derive(Debug, PartialEq)]
 pub enum LexicalError {
     InvalidToken(String),
     Eof,
@@ -36,14 +38,14 @@ impl<'a> Lexer<'a> {
     /// - 連続する数字は一つのトークンとして扱う
     /// - TODO: 小数点のサポート
     /// - 不正な文字列があればErrを返す
-    pub fn lex(&mut self) -> Result<Vec<Token>, Box<dyn Error>> {
+    pub fn lex(&mut self) -> LexResult<Vec<Token>> {
         let mut tokens = Vec::new();
         loop {
             let tok = self.next_token();
             match tok {
                 Ok(t) => tokens.push(t),
                 Err(LexicalError::Eof) => break,
-                Err(e) => return Err(e.into()),
+                Err(e) => return Err(e),
             };
         }
 

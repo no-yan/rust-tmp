@@ -1,20 +1,20 @@
-use std::error::Error;
-use std::fmt;
 use std::iter::Peekable;
 
+mod error;
 mod lexer;
 mod token;
 
+use crate::error::{CompilerError, SyntaxError};
 use crate::lexer::Lexer;
 use crate::token::Token;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), CompilerError> {
     let args: Vec<String> = std::env::args().collect();
     let buf = match args.iter().nth(1) {
         Some(buf) => buf.clone(),
         None => {
             let mut buf = String::new();
-            std::io::stdin().read_line(&mut buf)?;
+            std::io::stdin().read_line(&mut buf).expect("Failed to read input");
             buf
         }
     };
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tokens = lexer.lex()?;
 
     let ast = Parser::new(tokens).parse()?;
-    let v = ast.eval()?;
+    let v = ast.eval();
     println!("{}", v);
 
     Ok(())
@@ -60,37 +60,25 @@ enum Expression {
 }
 
 impl Expression {
-    fn eval(&self) -> Result<i32, Box<dyn Error>> {
+    fn eval(&self) -> i32 {
         match self {
-            Expression::Unary { op, expr } => Ok(match op {
-                Token::Minus => -expr.eval()?,
+            Expression::Unary { op, expr } => match op {
+                Token::Minus => -expr.eval(),
                 _ => unreachable!(),
-            }),
-            Expression::Binary { lhs, op, rhs } => Ok(match op {
-                Token::Plus => lhs.eval()? + rhs.eval()?,
-                Token::Minus => lhs.eval()? - rhs.eval()?,
-                Token::Mul => lhs.eval()? * rhs.eval()?,
-                Token::Div => lhs.eval()? / rhs.eval()?,
-                _ => unreachable!(""),
-            }),
-            Expression::Value(v) => Ok(*v),
+            },
+            Expression::Binary { lhs, op, rhs } => match op {
+                Token::Plus => lhs.eval() + rhs.eval(),
+                Token::Minus => lhs.eval() - rhs.eval(),
+                Token::Mul => lhs.eval() * rhs.eval(),
+                Token::Div => lhs.eval() / rhs.eval(),
+                _ => unreachable!(),
+            },
+            Expression::Value(v) => *v,
         }
     }
 }
 
-#[derive(Debug)]
-enum SyntaxError {
-    UnmatchedLeftParen,
-    UnexpectedToken(Token),
-}
-
 type ParseResult<T> = Result<T, SyntaxError>;
-impl Error for SyntaxError {}
-impl std::fmt::Display for SyntaxError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        unimplemented!()
-    }
-}
 
 /// ## EBNF
 /// E -> Expr(0)
@@ -178,58 +166,58 @@ impl Parser {
 mod tests {
     use super::*;
 
-    fn parse(input: &str) -> Result<i32, Box<dyn Error>>{
+    fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
-        let tokens = lexer.lex().unwrap();
-        let ast = Parser::new(tokens).parse().unwrap();
-        ast.eval()
+        let tokens = lexer.lex()?;
+        let ast = Parser::new(tokens).parse()?;
+        Ok(ast.eval())
     }
 
     #[test]
     fn sum() {
-        let result = parse("1 + 2").map_err(|_| ());
+        let result = parse("1 + 2");
         assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn difference() {
-        let result = parse("1 - 2 - 3").map_err(|_| ());
+        let result = parse("1 - 2 - 3");
         assert_eq!(result, Ok(-4));
     }
 
     #[test]
     fn sum_3_operand() {
-        let result = parse("1 + 2 + 3").map_err(|_| ());
+        let result = parse("1 + 2 + 3");
         assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn prod_3_operand() {
-        let result = parse("1*2*3").map_err(|_| ());
+        let result = parse("1*2*3");
         assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn process_with_priority() {
-        let result = parse("1+2*3").map_err(|_| ());
+        let result = parse("1+2*3");
         assert_eq!(result, Ok(7));
     }
 
     #[test]
     fn without_space() {
-        let result = parse("1+2").map_err(|_| ());
-        assert_eq!(result, Ok(3))
+        let result = parse("1+2");
+        assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn with_paren() {
-        let result = parse("(1+2)").map_err(|_| ());
+        let result = parse("(1+2)");
         assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn with_paren_precedence() {
-        let result = parse("(1+2)*3").map_err(|_| ());
+        let result = parse("(1+2)*3");
         assert_eq!(result, Ok(9));
     }
 
@@ -247,7 +235,7 @@ mod tests {
 
     #[test]
     fn unary_minus() {
-        let result = parse("-1").map_err(|_| ());
+        let result = parse("-1");
         assert_eq!(result, Ok(-1));
     }
 }
