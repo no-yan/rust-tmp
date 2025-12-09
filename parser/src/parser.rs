@@ -102,12 +102,37 @@ fn unary_prec(tok: &Token) -> Option<PrecInfo> {
     }
 }
 
-/// ## EBNF
-/// E -> Expr(0)
-/// Expr(p) ->  Primary { BinOp Expr(q) }
-/// Primary -> Unary Expr(q) | "(" E ")" | v
-/// BinOp   -> "+" | "-" | "*" | "/"
-/// Unary   -> "-"
+/// 計算式を構文解析し、[`Expression`]を構築するパーサー。
+///
+/// ## サポートする演算子
+///
+/// - 二項演算子: "+", "-", "*", "/"
+/// - 単項演算子: "-"
+///
+/// # AST の構造
+///
+/// 構築される AST は優先度が低い演算子が根に、高い演算子が葉に配置される。
+///
+/// 例: `1 + 2 * 3` は以下の構造になる:
+/// ```text
+///       +
+///      / \
+///     1   *
+///        / \
+///       2   3
+/// ```
+/// パーサーは浮動小数点数をサポートせず、パースに失敗した場合にエラーを返す
+///
+/// ## Example
+///
+/// ```rust
+/// let mut lexer = Lexer::new("1+2");
+/// let token = lexer.lex()?;
+///
+/// let expr = Parser::new(token).parse()?;
+/// let v = expr.eval();
+/// assert_eq!(v, 3);
+/// ```
 pub struct Parser {
     src: Peekable<std::vec::IntoIter<Token>>,
 }
@@ -120,6 +145,17 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ParseResult<Expression> {
+        // Precedence climbing algorithmを使用してパースを行う。
+        // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
+
+        // ## 文法
+        //
+        // E -> Expr(0)
+        // Expr(p) ->  Primary { BinOp Expr(q) }
+        // Primary -> Unary Expr(q) | "(" E ")" | v
+        // BinOp   -> "+" | "-" | "*" | "/"
+        // Unary   -> "-"
+        //
         match self.expr(0) {
             Ok(expr) => {
                 if let Some(tok) = self.src.next() {
