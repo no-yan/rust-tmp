@@ -9,7 +9,7 @@ use crate::parser::Parser;
 
 fn main() -> Result<(), CompilerError> {
     let args: Vec<String> = std::env::args().collect();
-    let buf = match args.iter().nth(1) {
+    let buf = match args.get(1) {
         Some(buf) => buf.clone(),
         None => {
             let mut buf = String::new();
