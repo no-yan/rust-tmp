@@ -56,6 +56,52 @@ impl Expression {
     }
 }
 
+#[derive(Debug)]
+enum Assoc {
+    Left,
+    // Right,
+}
+
+#[derive(Debug)]
+struct PrecInfo {
+    prec: u8,
+    assoc: Assoc,
+}
+
+impl PrecInfo {
+    fn binds_at(&self, min_prec: u8) -> bool {
+        self.prec >= min_prec
+    }
+}
+
+fn binary_prec(tok: &Token) -> Option<PrecInfo> {
+    use crate::token::Token::*;
+
+    match tok {
+        Plus | Minus => Some(PrecInfo {
+            prec: 1,
+            assoc: Assoc::Left,
+        }),
+        Mul | Div => Some(PrecInfo {
+            prec: 2,
+            assoc: Assoc::Left,
+        }),
+        _ => None,
+    }
+}
+
+fn unary_prec(tok: &Token) -> Option<PrecInfo> {
+    use crate::token::Token::*;
+
+    match tok {
+        Minus => Some(PrecInfo {
+            prec: 3,
+            assoc: Assoc::Left,
+        }),
+        _ => None,
+    }
+}
+
 /// ## EBNF
 /// E -> Expr(0)
 /// Expr(p) ->  Primary { BinOp Expr(q) }
@@ -86,21 +132,28 @@ impl Parser {
         }
     }
 
-    fn expr(&mut self, prec: u8) -> ParseResult<Expression> {
+    fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
         let mut lhs = self.primary()?;
 
         while let Some(tok) = self.src.peek() {
             if !tok.is_op() {
                 break;
             }
-            if !tok.precedes(prec) {
+
+            let Some(prec_info) = binary_prec(tok) else {
+                return Err(SyntaxError::UnexpectedToken(tok.clone()));
+            };
+            if !prec_info.binds_at(min_prec) {
                 break;
             }
+
             let tok = self.src.next().unwrap();
 
-            // NOTE:
-            // 右連結の演算子を導入する場合、同じPrecedenceもrhsに含めてよい
-            let rhs = self.expr(tok.prec() + 1)?;
+            let next_prec = match prec_info.assoc {
+                Assoc::Left => prec_info.prec + 1,
+                // Assoc::Right => prec_info.prec,
+            };
+            let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {
                 lhs: Box::new(lhs),
                 op: tok.clone(),
@@ -115,7 +168,8 @@ impl Parser {
         let primary = match self.src.next() {
             Some(Token::Num(n)) => Expression::Value(n),
             Some(Token::Minus) => {
-                let expr = self.expr(4)?; // TODO: どこかに配置
+                let info = unary_prec(&Token::Minus).unwrap();
+                let expr = self.expr(info.prec)?;
                 Expression::Unary {
                     op: Token::Minus,
                     expr: Box::new(expr),
@@ -130,7 +184,7 @@ impl Parser {
                     Ok(expr)
                 }
             }?,
-            Some(tok)=> return Err(SyntaxError::UnexpectedToken(tok)),
+            Some(tok) => return Err(SyntaxError::UnexpectedToken(tok)),
             None => unimplemented!(),
         };
 
