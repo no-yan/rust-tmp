@@ -192,7 +192,7 @@ impl Parser {
             let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {
                 lhs: Box::new(lhs),
-                op: tok.clone(),
+                op: tok,
                 rhs: Box::new(rhs),
             };
         }
