@@ -13,7 +13,9 @@ fn main() -> Result<(), CompilerError> {
         Some(buf) => buf.clone(),
         None => {
             let mut buf = String::new();
-            std::io::stdin().read_line(&mut buf).expect("Failed to read input");
+            std::io::stdin()
+                .read_line(&mut buf)
+                .expect("Failed to read input");
             buf
         }
     };
@@ -27,22 +29,6 @@ fn main() -> Result<(), CompilerError> {
 
     Ok(())
 }
-
-// TODO:
-// ゴール: 単項演算子をサポートする
-//
-// ### 調査:
-// - [x] 単項演算子をサポートするアルゴリズムを3つ知る
-// - [x] 実装の容易さ、拡張性を比較する
-// - [x] 一般的なパーサーの使用するアルゴリズムを調査する
-// - [ ] Precedence climbing parserのアルゴリズムを説明できるようになる
-//
-// ### 実装
-// - [x] EBNFに単項演算子を追加
-// - [x] テストを新しいAPIに変更する
-// - [x] exprのパースを実装する
-// - [x] primaryのパースを実装する
-// - [x] Token::eval()を実装する
 
 #[cfg(test)]
 mod tests {
