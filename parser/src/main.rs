@@ -8,19 +8,18 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 
 fn main() -> Result<(), CompilerError> {
-    let args: Vec<String> = std::env::args().collect();
-    let buf = match args.get(1) {
-        Some(buf) => buf.clone(),
-        None => {
-            let mut buf = String::new();
-            std::io::stdin()
-                .read_line(&mut buf)
-                .expect("Failed to read input");
-            buf
-        }
-    };
+    // 引数で式が与えられた場合はそれを入力として扱う
+    // それ以外は標準入力にフォールバックする
+    let arg = std::env::args().nth(1);
+    let input = arg.unwrap_or_else(|| {
+        let mut buf = String::new();
+        std::io::stdin()
+            .read_line(&mut buf)
+            .expect("Failed to read input");
+        buf
+    });
 
-    let mut lexer = Lexer::new(&buf);
+    let mut lexer = Lexer::new(&input);
     let tokens = lexer.lex()?;
 
     let ast = Parser::new(tokens).parse()?;
