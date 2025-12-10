@@ -10,10 +10,3 @@ pub enum Token {
     LeftParen,
     RightParen,
 }
-
-impl Token {
-    pub fn is_op(&self) -> bool {
-        use Token::*;
-        matches!(self, Plus | Minus | Mul | Div)
-    }
-}

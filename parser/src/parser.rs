@@ -179,17 +179,15 @@ impl Parser {
         let mut lhs = self.primary()?;
 
         while let Some(tok) = self.src.peek() {
-            if !tok.is_op() {
-                break;
-            }
-
             let Some(op_info) = binary_op(tok) else {
-                return Err(SyntaxError::UnexpectedToken(tok.clone()));
+                break;
             };
+
             if !op_info.binds_at(min_prec) {
                 break;
             }
 
+            // トークンを消費
             let tok = self.src.next().unwrap();
 
             let next_prec = match op_info.assoc {
