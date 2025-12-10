@@ -8,6 +8,7 @@ use crate::token::Token;
 pub enum SyntaxError {
     UnmatchedLeftParen,
     UnexpectedToken(Token),
+    UnexpectedEof,
 }
 
 impl Error for SyntaxError {}
@@ -17,6 +18,7 @@ impl fmt::Display for SyntaxError {
         match self {
             SyntaxError::UnmatchedLeftParen => write!(f, "Unmatched left parenthesis"),
             SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok),
+            SyntaxError::UnexpectedEof => write!(f, "Unexpected end of file"),
         }
     }
 }
@@ -218,17 +220,23 @@ impl Parser {
             }
             Some(Token::LeftParen) => {
                 let expr = self.expr(0)?;
-                let next = self.src.next();
-                if !matches!(next, Some(Token::RightParen)) {
-                    Err(SyntaxError::UnmatchedLeftParen)
-                } else {
-                    Ok(expr)
-                }
-            }?,
+                if self.expect(Token::RightParen).is_err() {
+                    return Err(SyntaxError::UnmatchedLeftParen);
+                };
+                expr
+            }
             Some(tok) => return Err(SyntaxError::UnexpectedToken(tok)),
             None => unimplemented!(),
         };
 
         Ok(primary)
+    }
+
+    fn expect(&mut self, expected: Token) -> Result<(), SyntaxError> {
+        match self.src.next() {
+            Some(ref tok) if tok == &expected => Ok(()),
+            Some(tok) => Err(SyntaxError::UnexpectedToken(tok)),
+            None => Err(SyntaxError::UnexpectedEof),
+        }
     }
 }
