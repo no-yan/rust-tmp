@@ -19,11 +19,9 @@ fn main() -> Result<(), CompilerError> {
         buf
     });
 
-    let mut lexer = Lexer::new(&input);
-    let tokens = lexer.lex()?;
-
-    let ast = Parser::new(tokens).parse()?;
-    let v = ast.eval();
+    let tokens = Lexer::new(&input).lex()?;
+    let expr = Parser::new(tokens).parse()?;
+    let v = expr.eval();
     println!("{}", v);
 
     Ok(())
