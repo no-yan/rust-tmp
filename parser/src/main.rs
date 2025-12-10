@@ -30,6 +30,8 @@ fn main() -> Result<(), CompilerError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::SyntaxError;
+    use crate::token::Token;
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
@@ -87,15 +89,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn unmatched_left_paren() {
-        parse("(1+2").unwrap();
+        let result = parse("(1+2");
+        assert_eq!(result, Err(SyntaxError::UnmatchedLeftParen.into()));
     }
 
     #[test]
-    #[should_panic]
     fn unmatched_right_paren() {
-        parse("1+2)").unwrap();
+        let result = parse("1+2)");
+        assert_eq!(result, Err(SyntaxError::UnexpectedToken(Token::RightParen).into()));
     }
 
     #[test]
