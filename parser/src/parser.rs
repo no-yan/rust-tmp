@@ -62,27 +62,30 @@ enum Assoc {
     // Right,
 }
 
+/// 演算子の優先度と結合順序を表す。
 #[derive(Debug)]
-struct PrecInfo {
+struct OpInfo {
     prec: u8,
     assoc: Assoc,
 }
 
-impl PrecInfo {
+impl OpInfo {
     fn binds_at(&self, min_prec: u8) -> bool {
         self.prec >= min_prec
     }
 }
 
-fn binary_prec(tok: &Token) -> Option<PrecInfo> {
+/// 二項演算子としてトークンが持つ[`OpInfo`]を返す。
+/// トークンが二項演算子ではない場合、Noneを返す。
+fn binary_op(tok: &Token) -> Option<OpInfo> {
     use crate::token::Token::*;
 
     match tok {
-        Plus | Minus => Some(PrecInfo {
+        Plus | Minus => Some(OpInfo {
             prec: 1,
             assoc: Assoc::Left,
         }),
-        Mul | Div => Some(PrecInfo {
+        Mul | Div => Some(OpInfo {
             prec: 2,
             assoc: Assoc::Left,
         }),
@@ -90,11 +93,13 @@ fn binary_prec(tok: &Token) -> Option<PrecInfo> {
     }
 }
 
-fn unary_prec(tok: &Token) -> Option<PrecInfo> {
+/// 単項演算子としてトークンが持つ[`OpInfo`]を返す。
+/// トークンが単項演算子ではない場合、Noneを返す。
+fn unary_op(tok: &Token) -> Option<OpInfo> {
     use crate::token::Token::*;
 
     match tok {
-        Minus => Some(PrecInfo {
+        Minus => Some(OpInfo {
             prec: 3,
             assoc: Assoc::Left,
         }),
@@ -176,18 +181,18 @@ impl Parser {
                 break;
             }
 
-            let Some(prec_info) = binary_prec(tok) else {
+            let Some(op_info) = binary_op(tok) else {
                 return Err(SyntaxError::UnexpectedToken(tok.clone()));
             };
-            if !prec_info.binds_at(min_prec) {
+            if !op_info.binds_at(min_prec) {
                 break;
             }
 
             let tok = self.src.next().unwrap();
 
-            let next_prec = match prec_info.assoc {
-                Assoc::Left => prec_info.prec + 1,
-                // Assoc::Right => prec_info.prec,
+            let next_prec = match op_info.assoc {
+                Assoc::Left => op_info.prec + 1,
+                // Assoc::Right => op_info.prec,
             };
             let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {
@@ -204,7 +209,7 @@ impl Parser {
         let primary = match self.src.next() {
             Some(Token::Num(n)) => Expression::Value(n),
             Some(Token::Minus) => {
-                let info = unary_prec(&Token::Minus).unwrap();
+                let info = unary_op(&Token::Minus).unwrap();
                 let expr = self.expr(info.prec)?;
                 Expression::Unary {
                     op: Token::Minus,
