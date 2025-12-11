@@ -130,7 +130,7 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 ///
 /// ## サポートする演算子
 ///
-/// - 二項演算子: "+", "-", "*", "/", "*"
+/// - 二項演算子: "+", "-", "*", "/", "^"
 /// - 単項演算子: "-"
 ///
 /// # AST の構造
@@ -177,9 +177,8 @@ impl Parser {
         // E -> Expr(0)
         // Expr(p) ->  Primary { BinOp Expr(q) }
         // Primary -> Unary Expr(q) | "(" E ")" | v
-        // BinOp   -> "+" | "-" | "*" | "/"
+        // BinOp   -> "+" | "-" | "*" | "/" | "^"
         // Unary   -> "-"
-        //
         match self.expr(0) {
             Ok(expr) => {
                 if let Some(tok) = self.src.next() {
