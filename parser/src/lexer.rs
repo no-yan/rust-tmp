@@ -201,6 +201,6 @@ mod test {
         let mut lexer = Lexer::new(input);
         let result = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![tok!(Pow, 0,1)]);
+        assert_eq!(result, vec![tok!(Pow, 0, 1)]);
     }
 }

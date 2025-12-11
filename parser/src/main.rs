@@ -8,13 +8,15 @@ use crate::error::format_error;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 
+use std::process::ExitCode;
+
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let expr = Parser::new(tokens).parse()?;
     Ok(expr.eval())
 }
 
-fn main() -> Result<(), CompilerError> {
+fn main() -> ExitCode {
     // 引数で式が与えられた場合はそれを入力として扱う
     // それ以外は標準入力にフォールバックする
     let arg = std::env::args().nth(1);
@@ -26,12 +28,10 @@ fn main() -> Result<(), CompilerError> {
         buf
     });
 
-    match run(&input) {
-        Ok(v) => println!("{}", v),
-        Err(e) => eprintln!("{}", format_error(&e, &input)),
-    };
-
-    Ok(())
+    run(&input)
+        .inspect(|v| println!("{v}"))
+        .inspect_err(|e| eprintln!("{}", format_error(e, &input)))
+        .map_or(ExitCode::FAILURE, |_| ExitCode::SUCCESS)
 }
 
 #[cfg(test)]
