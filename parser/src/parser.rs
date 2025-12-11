@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 use std::iter::Peekable;
 
-use crate::token::Token;
+use crate::token::{Token, TokenKind};
 
 #[derive(Debug, PartialEq)]
 pub enum SyntaxError {
@@ -17,7 +17,7 @@ impl fmt::Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SyntaxError::UnmatchedLeftParen => write!(f, "Unmatched left parenthesis"),
-            SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok),
+            SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok.kind),
             SyntaxError::UnexpectedEof => write!(f, "Unexpected end of file"),
         }
     }
@@ -28,12 +28,12 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 #[derive(Debug)]
 pub enum Expression {
     Unary {
-        op: Token,
+        op: TokenKind,
         expr: Box<Expression>,
     },
     Binary {
         lhs: Box<Expression>,
-        op: Token,
+        op: TokenKind,
         rhs: Box<Expression>,
     },
     Value(i32),
@@ -43,14 +43,14 @@ impl Expression {
     pub fn eval(&self) -> i32 {
         match self {
             Expression::Unary { op, expr } => match op {
-                Token::Minus => -expr.eval(),
+                TokenKind::Minus => -expr.eval(),
                 _ => unreachable!(),
             },
             Expression::Binary { lhs, op, rhs } => match op {
-                Token::Plus => lhs.eval() + rhs.eval(),
-                Token::Minus => lhs.eval() - rhs.eval(),
-                Token::Mul => lhs.eval() * rhs.eval(),
-                Token::Div => lhs.eval() / rhs.eval(),
+                TokenKind::Plus => lhs.eval() + rhs.eval(),
+                TokenKind::Minus => lhs.eval() - rhs.eval(),
+                TokenKind::Mul => lhs.eval() * rhs.eval(),
+                TokenKind::Div => lhs.eval() / rhs.eval(),
                 _ => unreachable!(),
             },
             Expression::Value(v) => *v,
@@ -79,8 +79,8 @@ impl OpInfo {
 
 /// 二項演算子としてトークンが持つ[`OpInfo`]を返す。
 /// トークンが二項演算子ではない場合、Noneを返す。
-fn binary_op(tok: &Token) -> Option<OpInfo> {
-    use crate::token::Token::*;
+fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
+    use crate::token::TokenKind::*;
 
     match tok {
         Plus | Minus => Some(OpInfo {
@@ -97,8 +97,8 @@ fn binary_op(tok: &Token) -> Option<OpInfo> {
 
 /// 単項演算子としてトークンが持つ[`OpInfo`]を返す。
 /// トークンが単項演算子ではない場合、Noneを返す。
-fn unary_op(tok: &Token) -> Option<OpInfo> {
-    use crate::token::Token::*;
+fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
+    use crate::token::TokenKind::*;
 
     match tok {
         Minus => Some(OpInfo {
@@ -179,7 +179,7 @@ impl Parser {
         let mut lhs = self.primary()?;
 
         while let Some(tok) = self.src.peek() {
-            let Some(op_info) = binary_op(tok) else {
+            let Some(op_info) = binary_op(&tok.kind) else {
                 break;
             };
 
@@ -197,7 +197,7 @@ impl Parser {
             let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {
                 lhs: Box::new(lhs),
-                op: tok,
+                op: tok.kind,
                 rhs: Box::new(rhs),
             };
         }
@@ -206,33 +206,34 @@ impl Parser {
     }
 
     fn primary(&mut self) -> ParseResult<Expression> {
-        let primary = match self.src.next() {
-            Some(Token::Num(n)) => Expression::Value(n),
-            Some(Token::Minus) => {
-                let info = unary_op(&Token::Minus).unwrap();
+        let tok = self.src.next();
+        let primary = match tok.clone().map(|tok| tok.kind) {
+            Some(TokenKind::Num(n)) => Expression::Value(n),
+            Some(TokenKind::Minus) => {
+                let info = unary_op(&TokenKind::Minus).unwrap();
                 let expr = self.expr(info.prec)?;
                 Expression::Unary {
-                    op: Token::Minus,
+                    op: TokenKind::Minus,
                     expr: Box::new(expr),
                 }
             }
-            Some(Token::LeftParen) => {
+            Some(TokenKind::LeftParen) => {
                 let expr = self.expr(0)?;
-                if self.expect(Token::RightParen).is_err() {
+                if self.expect(TokenKind::RightParen).is_err() {
                     return Err(SyntaxError::UnmatchedLeftParen);
                 };
                 expr
             }
-            Some(tok) => return Err(SyntaxError::UnexpectedToken(tok)),
+            Some(_) => return Err(SyntaxError::UnexpectedToken(tok.unwrap())),
             None => unimplemented!(),
         };
 
         Ok(primary)
     }
 
-    fn expect(&mut self, expected: Token) -> Result<(), SyntaxError> {
+    fn expect(&mut self, expected: TokenKind) -> Result<(), SyntaxError> {
         match self.src.next() {
-            Some(ref tok) if tok == &expected => Ok(()),
+            Some(ref tok) if tok.kind == expected => Ok(()),
             Some(tok) => Err(SyntaxError::UnexpectedToken(tok)),
             None => Err(SyntaxError::UnexpectedEof),
         }

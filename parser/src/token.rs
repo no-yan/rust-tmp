@@ -1,5 +1,11 @@
 #[derive(Debug, PartialEq, Clone)]
-pub enum Token {
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum TokenKind {
     Plus,
     Minus,
     Mul,
@@ -9,4 +15,23 @@ pub enum Token {
 
     LeftParen,
     RightParen,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Token {
+    pub span: Span,
+    pub kind: TokenKind,
+}
+
+#[macro_export]
+macro_rules! tok {
+    ($kind:expr, $start:expr, $end:expr) => {{
+        $crate::token::Token {
+            kind: $kind,
+            span: $crate::token::Span {
+                start: $start,
+                end: $end,
+            },
+        }
+    }};
 }

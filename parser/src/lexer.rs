@@ -1,3 +1,4 @@
+use crate::token::Span;
 use crate::token::Token;
 use std::error::Error;
 use std::fmt;
@@ -55,16 +56,17 @@ impl<'a> Lexer<'a> {
     /// 現在位置から次の1トークンを読む
     /// 不正な文字に遭遇したらErrを返す
     pub fn next_token(&mut self) -> Result<Token, LexicalError> {
-        use crate::token::Token::*;
+        use crate::token::TokenKind::*;
 
         self.skip_whitespace();
 
+        let start = self.pos;
         let char = match self.bump() {
             Some(c) => c,
             None => return Err(LexicalError::Eof),
         };
 
-        let tok = match char {
+        let kind = match char {
             '+' => Plus,
             '-' => Minus,
             '*' => Mul,
@@ -77,8 +79,12 @@ impl<'a> Lexer<'a> {
             }
             c => return Err(LexicalError::InvalidToken(c.to_string())),
         };
+        let end = self.pos;
 
-        Ok(tok)
+        Ok(Token {
+            span: Span { start, end },
+            kind,
+        })
     }
 
     fn skip_whitespace(&mut self) {
@@ -125,7 +131,8 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::token::Token::*;
+    use crate::tok;
+    use crate::token::TokenKind::*;
 
     #[test]
     fn plus() {
@@ -133,7 +140,7 @@ mod test {
         let mut lexer = Lexer::new(input);
         let result = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![Plus]);
+        assert_eq!(result, vec![tok!(Plus, 0, 1),]);
     }
 
     #[test]
@@ -142,7 +149,7 @@ mod test {
         let mut lexer = Lexer::new(input);
         let result = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![Plus, Num(123)]);
+        assert_eq!(result, vec![tok!(Plus, 0, 1), tok!(Num(123), 2, 5),]);
     }
 
     #[test]
@@ -151,7 +158,7 @@ mod test {
         let mut lexer = Lexer::new(input);
         let result = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![Num(123)]);
+        assert_eq!(result, vec![tok!(Num(123), 0, 3),]);
     }
 
     #[test]
@@ -160,6 +167,13 @@ mod test {
         let mut lexer = Lexer::new(input);
         let result = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![LeftParen, Num(1), RightParen]);
+        assert_eq!(
+            result,
+            vec![
+                tok!(LeftParen, 0, 1),
+                tok!(Num(1), 1, 2),
+                tok!(RightParen, 2, 3),
+            ]
+        );
     }
 }
