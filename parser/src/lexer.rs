@@ -89,7 +89,10 @@ impl<'a> Lexer<'a> {
             c => {
                 return Err(LexicalError::InvalidToken(
                     c.to_string(),
-                    Span { start, end: start + c.len_utf8() },
+                    Span {
+                        start,
+                        end: start + c.len_utf8(),
+                    },
                 ));
             }
         };

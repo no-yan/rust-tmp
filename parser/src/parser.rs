@@ -237,7 +237,7 @@ impl Parser {
                 expr
             }
             Some(_) => return Err(SyntaxError::UnexpectedToken(tok.unwrap())),
-            None => unimplemented!()
+            None => return Err(SyntaxError::UnexpectedEof),
         };
 
         Ok(primary)

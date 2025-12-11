@@ -28,7 +28,7 @@ fn main() -> Result<(), CompilerError> {
 
     match run(&input) {
         Ok(v) => println!("{}", v),
-        Err(e) =>  eprintln!("{}", format_error(&e, &input))
+        Err(e) => eprintln!("{}", format_error(&e, &input)),
     };
 
     Ok(())
@@ -117,5 +117,11 @@ mod tests {
     fn unary_minus() {
         let result = parse("-1");
         assert_eq!(result, Ok(-1));
+    }
+
+    #[test]
+    fn unexpected_eof() {
+        let result = parse("-");
+        assert_eq!(result, Err(SyntaxError::UnexpectedEof.into()));
     }
 }
