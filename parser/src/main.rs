@@ -4,8 +4,15 @@ mod parser;
 mod token;
 
 use crate::error::CompilerError;
+use crate::error::format_error;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
+
+fn run(input: &str) -> Result<i32, CompilerError> {
+    let tokens = Lexer::new(input).lex()?;
+    let expr = Parser::new(tokens).parse()?;
+    Ok(expr.eval())
+}
 
 fn main() -> Result<(), CompilerError> {
     // 引数で式が与えられた場合はそれを入力として扱う
@@ -19,10 +26,10 @@ fn main() -> Result<(), CompilerError> {
         buf
     });
 
-    let tokens = Lexer::new(&input).lex()?;
-    let expr = Parser::new(tokens).parse()?;
-    let v = expr.eval();
-    println!("{}", v);
+    match run(&input) {
+        Ok(v) => println!("{}", v),
+        Err(e) =>  eprintln!("{}", format_error(&e, &input))
+    };
 
     Ok(())
 }
@@ -31,7 +38,7 @@ fn main() -> Result<(), CompilerError> {
 mod tests {
     use super::*;
     use crate::parser::SyntaxError;
-    use crate::token::{Token, TokenKind};
+    use crate::token::TokenKind::*;
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
@@ -91,7 +98,10 @@ mod tests {
     #[test]
     fn unmatched_left_paren() {
         let result = parse("(1+2");
-        assert_eq!(result, Err(SyntaxError::UnmatchedLeftParen.into()));
+        assert_eq!(
+            result,
+            Err(SyntaxError::UnmatchedLeftParen(tok!(LeftParen, 0, 1)).into())
+        );
     }
 
     #[test]
@@ -99,11 +109,7 @@ mod tests {
         let result = parse("1+2)");
         assert_eq!(
             result,
-            Err(SyntaxError::UnexpectedToken(Token {
-                kind: TokenKind::RightParen,
-                span: crate::token::Span { start: 3, end: 4 }
-            })
-            .into())
+            Err(SyntaxError::UnexpectedToken(tok!(RightParen, 3, 4)).into())
         );
     }
 

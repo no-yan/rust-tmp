@@ -1,5 +1,5 @@
-use crate::token::Span;
-use crate::token::Token;
+use crate::error::Spanned;
+use crate::token::{Span, Token};
 use std::error::Error;
 use std::fmt;
 
@@ -7,7 +7,7 @@ pub type LexResult<T> = Result<T, LexicalError>;
 
 #[derive(Debug, PartialEq)]
 pub enum LexicalError {
-    InvalidToken(String),
+    InvalidToken(String, Span),
     Eof,
 }
 
@@ -18,8 +18,17 @@ impl fmt::Display for LexicalError {
         use crate::lexer::LexicalError::*;
 
         match self {
-            InvalidToken(s) => write!(f, "Invalid token: {}", s),
+            InvalidToken(s, _) => write!(f, "Invalid token: {}", s),
             Eof => write!(f, "End of File"),
+        }
+    }
+}
+
+impl Spanned for LexicalError {
+    fn span(&self) -> Option<Span> {
+        match self {
+            Self::InvalidToken(_, span) => Some(span.clone()),
+            _ => None,
         }
     }
 }
@@ -77,7 +86,12 @@ impl<'a> Lexer<'a> {
                 let num = self.next_number();
                 Num(num)
             }
-            c => return Err(LexicalError::InvalidToken(c.to_string())),
+            c => {
+                return Err(LexicalError::InvalidToken(
+                    c.to_string(),
+                    Span { start, end: start + c.len_utf8() },
+                ));
+            }
         };
         let end = self.pos;
 

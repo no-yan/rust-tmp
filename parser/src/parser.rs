@@ -2,11 +2,12 @@ use std::error::Error;
 use std::fmt;
 use std::iter::Peekable;
 
-use crate::token::{Token, TokenKind};
+use crate::error::Spanned;
+use crate::token::{Span, Token, TokenKind};
 
 #[derive(Debug, PartialEq)]
 pub enum SyntaxError {
-    UnmatchedLeftParen,
+    UnmatchedLeftParen(Token),
     UnexpectedToken(Token),
     UnexpectedEof,
 }
@@ -16,9 +17,20 @@ impl Error for SyntaxError {}
 impl fmt::Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SyntaxError::UnmatchedLeftParen => write!(f, "Unmatched left parenthesis"),
+            SyntaxError::UnmatchedLeftParen(_) => write!(f, "Unmatched left parenthesis"),
             SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok.kind),
             SyntaxError::UnexpectedEof => write!(f, "Unexpected end of file"),
+        }
+    }
+}
+
+impl Spanned for SyntaxError {
+    fn span(&self) -> Option<Span> {
+        match self {
+            SyntaxError::UnmatchedLeftParen(tok) | SyntaxError::UnexpectedToken(tok) => {
+                Some(tok.span.clone())
+            }
+            _ => None,
         }
     }
 }
@@ -220,12 +232,12 @@ impl Parser {
             Some(TokenKind::LeftParen) => {
                 let expr = self.expr(0)?;
                 if self.expect(TokenKind::RightParen).is_err() {
-                    return Err(SyntaxError::UnmatchedLeftParen);
+                    return Err(SyntaxError::UnmatchedLeftParen(tok.unwrap()));
                 };
                 expr
             }
             Some(_) => return Err(SyntaxError::UnexpectedToken(tok.unwrap())),
-            None => unimplemented!(),
+            None => unimplemented!()
         };
 
         Ok(primary)
