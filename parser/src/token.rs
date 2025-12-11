@@ -10,6 +10,7 @@ pub enum TokenKind {
     Minus,
     Mul,
     Div,
+    Pow,
 
     Num(i32),
 

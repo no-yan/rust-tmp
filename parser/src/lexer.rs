@@ -80,6 +80,7 @@ impl<'a> Lexer<'a> {
             '-' => Minus,
             '*' => Mul,
             '/' => Div,
+            '^' => Pow,
             '(' => LeftParen,
             ')' => RightParen,
             c if c.is_ascii_digit() => {
@@ -192,5 +193,14 @@ mod test {
                 tok!(RightParen, 2, 3),
             ]
         );
+    }
+
+    #[test]
+    fn power() {
+        let input = "^";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(result, vec![tok!(Pow, 0,1)]);
     }
 }
