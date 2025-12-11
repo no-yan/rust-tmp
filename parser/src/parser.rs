@@ -63,6 +63,7 @@ impl Expression {
                 TokenKind::Minus => lhs.eval() - rhs.eval(),
                 TokenKind::Mul => lhs.eval() * rhs.eval(),
                 TokenKind::Div => lhs.eval() / rhs.eval(),
+                TokenKind::Pow => lhs.eval().pow(rhs.eval() as u32),
                 _ => unreachable!(),
             },
             Expression::Value(v) => *v,
@@ -73,7 +74,7 @@ impl Expression {
 #[derive(Debug)]
 enum Assoc {
     Left,
-    // Right,
+    Right,
 }
 
 /// 演算子の優先度と結合順序を表す。
@@ -102,6 +103,10 @@ fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
         Mul | Div => Some(OpInfo {
             prec: 2,
             assoc: Assoc::Left,
+        }),
+        Pow => Some(OpInfo {
+            prec: 4,
+            assoc: Assoc::Right,
         }),
         _ => None,
     }
@@ -204,7 +209,7 @@ impl Parser {
 
             let next_prec = match op_info.assoc {
                 Assoc::Left => op_info.prec + 1,
-                // Assoc::Right => op_info.prec,
+                Assoc::Right => op_info.prec,
             };
             let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {

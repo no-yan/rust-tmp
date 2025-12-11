@@ -96,6 +96,12 @@ mod tests {
     }
 
     #[test]
+    fn power() {
+        let result = parse("10^2");
+        assert_eq!(result, Ok(100));
+    }
+
+    #[test]
     fn unmatched_left_paren() {
         let result = parse("(1+2");
         assert_eq!(
