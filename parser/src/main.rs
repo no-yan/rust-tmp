@@ -25,7 +25,7 @@ fn main() -> ExitCode {
         std::io::stdin()
             .read_line(&mut buf)
             .expect("Failed to read input");
-        buf
+        buf.trim_end().to_owned()
     });
 
     run(&input)
