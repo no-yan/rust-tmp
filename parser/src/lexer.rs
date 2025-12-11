@@ -1,7 +1,9 @@
-use crate::error::Spanned;
-use crate::token::{Span, Token};
-use std::error::Error;
-use std::fmt;
+use std::{error::Error, fmt};
+
+use crate::{
+    error::Spanned,
+    token::{Span, Token},
+};
 
 pub type LexResult<T> = Result<T, LexicalError>;
 
@@ -149,8 +151,7 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tok;
-    use crate::token::TokenKind::*;
+    use crate::{tok, token::TokenKind::*};
 
     #[test]
     fn plus() {

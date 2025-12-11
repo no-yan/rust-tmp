@@ -1,9 +1,6 @@
-use crate::lexer::LexicalError;
-use crate::parser::SyntaxError;
-use crate::token::Span;
+use std::{error::Error, fmt};
 
-use std::error::Error;
-use std::fmt;
+use crate::{lexer::LexicalError, parser::SyntaxError, token::Span};
 
 pub trait Spanned {
     fn span(&self) -> Option<Span>;

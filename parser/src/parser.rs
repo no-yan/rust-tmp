@@ -1,9 +1,9 @@
-use std::error::Error;
-use std::fmt;
-use std::iter::Peekable;
+use std::{error::Error, fmt, iter::Peekable};
 
-use crate::error::Spanned;
-use crate::token::{Span, Token, TokenKind};
+use crate::{
+    error::Spanned,
+    token::{Span, Token, TokenKind},
+};
 
 #[derive(Debug, PartialEq)]
 pub enum SyntaxError {

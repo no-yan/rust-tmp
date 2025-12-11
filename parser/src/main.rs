@@ -3,12 +3,13 @@ mod lexer;
 mod parser;
 mod token;
 
-use crate::error::CompilerError;
-use crate::error::format_error;
-use crate::lexer::Lexer;
-use crate::parser::Parser;
-
 use std::process::ExitCode;
+
+use crate::{
+    error::{CompilerError, format_error},
+    lexer::Lexer,
+    parser::Parser,
+};
 
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
@@ -37,8 +38,7 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::SyntaxError;
-    use crate::token::TokenKind::*;
+    use crate::{parser::SyntaxError, token::TokenKind::*};
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
@@ -88,7 +88,6 @@ mod tests {
         let result = parse("(1+2)");
         assert_eq!(result, Ok(3));
     }
-
     #[test]
     fn with_paren_precedence() {
         let result = parse("(1+2)*3");
