@@ -171,7 +171,8 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 
 /// 計算式を構文解析し、[`Expression`]を構築するパーサー。
 ///
-/// ## サポートする演算子
+/// ## 仕様
+/// ### サポートする演算子
 ///
 /// - 二項演算子: `+`, `-`, `*`, `/`, `^`, `>`, `<`, `>=`, `<=`
 /// - 単項演算子: `-`
@@ -191,7 +192,15 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 /// - 右結合: `^`
 /// - 左結合: その他全て
 ///
-/// # AST の構造
+/// ### 文法
+///
+/// E -> Expr(0)
+/// Expr(p) ->  Primary { BinOp Expr(q) }
+/// Primary -> Unary Expr(q) | "(" E ")" | v
+/// BinOp   -> "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
+/// Unary   -> "-"
+///
+/// ### AST の構造
 ///
 /// 構築される AST は優先度が低い演算子が根に、高い演算子が葉に配置される。
 ///
@@ -209,9 +218,9 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 ///
 /// ```rust
 /// let mut lexer = Lexer::new("1+2");
-/// let token = lexer.lex()?;
+/// let tokens = lexer.lex()?;
 ///
-/// let expr = Parser::new(token).parse()?;
+/// let expr = Parser::new(tokens).parse()?;
 /// let v = expr.eval();
 /// assert_eq!(v, 3);
 /// ```
@@ -230,13 +239,6 @@ impl Parser {
         // Precedence climbing algorithmを使用してパースを行う。
         // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
 
-        // ## 文法
-        //
-        // E -> Expr(0)
-        // Expr(p) ->  Primary { BinOp Expr(q) }
-        // Primary -> Unary Expr(q) | "(" E ")" | v
-        // BinOp   -> "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
-        // Unary   -> "-"
         let expr = self.expr(prec::LOWEST)?;
 
         if let Some(tok) = self.src.next() {
