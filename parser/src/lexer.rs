@@ -89,6 +89,20 @@ impl<'a> Lexer<'a> {
                 let num = self.next_number();
                 Num(num)
             }
+            '<' => match self.peek() {
+                Some('=') => {
+                    self.bump();
+                    LtEq
+                },
+                _ => Lt,
+            },
+            '>' => match self.peek() {
+                Some('=') => {
+                    self.bump();
+                    GtEq
+                },
+                Some(_) | None => Gt,
+            },
             c => {
                 return Err(LexicalError::InvalidToken(
                     c.to_string(),
@@ -203,5 +217,29 @@ mod test {
         let result = lexer.lex().unwrap();
 
         assert_eq!(result, vec![tok!(Pow, 0, 1)]);
+    }
+
+    #[test]
+    fn compare_op() {
+        let input = "(1<2)*(1>=2)";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                tok!(LeftParen, 0, 1),
+                tok!(Num(1), 1, 2),
+                tok!(Lt, 2, 3),
+                tok!(Num(2), 3, 4),
+                tok!(RightParen, 4, 5),
+                tok!(Mul, 5, 6),
+                tok!(LeftParen, 6, 7),
+                tok!(Num(1), 7, 8),
+                tok!(GtEq, 8, 10),
+                tok!(Num(2), 10, 11),
+                tok!(RightParen, 11, 12),
+            ]
+        );
     }
 }

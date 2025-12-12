@@ -130,8 +130,11 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 ///
 /// ## サポートする演算子
 ///
-/// - 二項演算子: "+", "-", "*", "/", "^"
+/// - 二項演算子: "+", "-", "*", "/", "^", ">", "<", ">=", "<="
 /// - 単項演算子: "-"
+///
+/// ### 結合度と優先順位
+///
 ///
 /// # AST の構造
 ///
@@ -177,18 +180,15 @@ impl Parser {
         // E -> Expr(0)
         // Expr(p) ->  Primary { BinOp Expr(q) }
         // Primary -> Unary Expr(q) | "(" E ")" | v
-        // BinOp   -> "+" | "-" | "*" | "/" | "^"
+        // BinOp   -> "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
         // Unary   -> "-"
-        match self.expr(0) {
-            Ok(expr) => {
-                if let Some(tok) = self.src.next() {
-                    Err(SyntaxError::UnexpectedToken(tok))
-                } else {
-                    Ok(expr)
-                }
-            }
-            Err(e) => Err(e),
+        let expr = self.expr(0)?;
+
+        if let Some(tok) = self.src.next() {
+            return Err(SyntaxError::UnexpectedToken(tok));
         }
+
+        Ok(expr)
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
@@ -222,10 +222,11 @@ impl Parser {
     }
 
     fn primary(&mut self) -> ParseResult<Expression> {
-        let tok = self.src.next();
-        let primary = match tok.clone().map(|tok| tok.kind) {
-            Some(TokenKind::Num(n)) => Expression::Value(n),
-            Some(TokenKind::Minus) => {
+        let tok = self.src.next().ok_or(SyntaxError::UnexpectedEof)?;
+
+        let primary = match tok.kind {
+            TokenKind::Num(n) => Expression::Value(n),
+            TokenKind::Minus => {
                 let info = unary_op(&TokenKind::Minus).unwrap();
                 let expr = self.expr(info.prec)?;
                 Expression::Unary {
@@ -233,15 +234,14 @@ impl Parser {
                     expr: Box::new(expr),
                 }
             }
-            Some(TokenKind::LeftParen) => {
+            TokenKind::LeftParen => {
                 let expr = self.expr(0)?;
                 if self.expect(TokenKind::RightParen).is_err() {
-                    return Err(SyntaxError::UnmatchedLeftParen(tok.unwrap()));
+                    return Err(SyntaxError::UnmatchedLeftParen(tok));
                 };
                 expr
             }
-            Some(_) => return Err(SyntaxError::UnexpectedToken(tok.unwrap())),
-            None => return Err(SyntaxError::UnexpectedEof),
+            _ => return Err(SyntaxError::UnexpectedToken(tok)),
         };
 
         Ok(primary)

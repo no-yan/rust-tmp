@@ -12,6 +12,11 @@ pub enum TokenKind {
     Div,
     Pow,
 
+    Gt,   // >
+    Lt,   // <
+    GtEq, // >=
+    LtEq, // <=
+
     Num(i32),
 
     LeftParen,

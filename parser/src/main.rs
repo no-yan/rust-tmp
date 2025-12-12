@@ -11,6 +11,10 @@ use crate::{
     parser::Parser,
 };
 
+// TODO:
+// 0. Tokenに >= GtEq, > Gt, <= LtEq, < Lt
+// 1. lexerを>= に対応させる
+// 2. parserで >= をパースできるようにする
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let expr = Parser::new(tokens).parse()?;
