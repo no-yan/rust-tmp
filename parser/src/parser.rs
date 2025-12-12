@@ -71,6 +71,14 @@ impl Expression {
     }
 }
 
+mod prec {
+    pub const LOWEST: u8 = 0;
+    pub const PLUS: u8 = 1;
+    pub const MUL: u8 = 2;
+    pub const UNARY: u8 = 3;
+    pub const POW: u8 = 4;
+}
+
 #[derive(Debug)]
 enum Assoc {
     Left,
@@ -97,15 +105,15 @@ fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
 
     match tok {
         Plus | Minus => Some(OpInfo {
-            prec: 1,
+            prec: prec::PLUS,
             assoc: Assoc::Left,
         }),
         Mul | Div => Some(OpInfo {
-            prec: 2,
+            prec: prec::MUL,
             assoc: Assoc::Left,
         }),
         Pow => Some(OpInfo {
-            prec: 4,
+            prec: prec::POW,
             assoc: Assoc::Right,
         }),
         _ => None,
@@ -119,7 +127,7 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 
     match tok {
         Minus => Some(OpInfo {
-            prec: 3,
+            prec: prec::UNARY,
             assoc: Assoc::Left,
         }),
         _ => None,
@@ -182,7 +190,7 @@ impl Parser {
         // Primary -> Unary Expr(q) | "(" E ")" | v
         // BinOp   -> "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
         // Unary   -> "-"
-        let expr = self.expr(0)?;
+        let expr = self.expr(prec::LOWEST)?;
 
         if let Some(tok) = self.src.next() {
             return Err(SyntaxError::UnexpectedToken(tok));
@@ -227,15 +235,14 @@ impl Parser {
         let primary = match tok.kind {
             TokenKind::Num(n) => Expression::Value(n),
             TokenKind::Minus => {
-                let info = unary_op(&TokenKind::Minus).unwrap();
-                let expr = self.expr(info.prec)?;
+                let expr = self.expr(prec::UNARY)?;
                 Expression::Unary {
                     op: TokenKind::Minus,
                     expr: Box::new(expr),
                 }
             }
             TokenKind::LeftParen => {
-                let expr = self.expr(0)?;
+                let expr = self.expr(prec::LOWEST)?;
                 if self.expect(TokenKind::RightParen).is_err() {
                     return Err(SyntaxError::UnmatchedLeftParen(tok));
                 };
