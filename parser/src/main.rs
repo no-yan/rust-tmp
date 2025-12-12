@@ -11,10 +11,6 @@ use crate::{
     parser::Parser,
 };
 
-// TODO:
-// 0. Tokenに >= GtEq, > Gt, <= LtEq, < Lt
-// 1. lexerを>= に対応させる
-// 2. parserで >= をパースできるようにする
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let expr = Parser::new(tokens).parse()?;
@@ -102,6 +98,54 @@ mod tests {
     fn power() {
         let result = parse("10^2");
         assert_eq!(result, Ok(100));
+    }
+
+    #[test]
+    fn gt_true() {
+        let result = parse("1>0");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn gt_false() {
+        let result = parse("1>2");
+        assert_eq!(result, Ok(0));
+    }
+
+    #[test]
+    fn gt_eq_true() {
+        let result = parse("1>=1");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn gt_eq_false() {
+        let result = parse("1>=2");
+        assert_eq!(result, Ok(0));
+    }
+
+    #[test]
+    fn lt_true() {
+        let result = parse("1<2");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn lt_false() {
+        let result = parse("1<0");
+        assert_eq!(result, Ok(0));
+    }
+
+    #[test]
+    fn lt_eq_true() {
+        let result = parse("1<=1");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn lt_eq_false() {
+        let result = parse("1<=0");
+        assert_eq!(result, Ok(0));
     }
 
     #[test]

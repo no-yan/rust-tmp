@@ -93,14 +93,14 @@ impl<'a> Lexer<'a> {
                 Some('=') => {
                     self.bump();
                     LtEq
-                },
+                }
                 _ => Lt,
             },
             '>' => match self.peek() {
                 Some('=') => {
                     self.bump();
                     GtEq
-                },
+                }
                 Some(_) | None => Gt,
             },
             c => {

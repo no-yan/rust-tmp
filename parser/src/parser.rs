@@ -64,6 +64,34 @@ impl Expression {
                 TokenKind::Mul => lhs.eval() * rhs.eval(),
                 TokenKind::Div => lhs.eval() / rhs.eval(),
                 TokenKind::Pow => lhs.eval().pow(rhs.eval() as u32),
+                TokenKind::Gt => {
+                    if lhs.eval() > rhs.eval() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                TokenKind::GtEq => {
+                    if lhs.eval() >= rhs.eval() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                TokenKind::Lt => {
+                    if lhs.eval() < rhs.eval() {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                TokenKind::LtEq => {
+                    if lhs.eval() <= rhs.eval() {
+                        1
+                    } else {
+                        0
+                    }
+                }
                 _ => unreachable!(),
             },
             Expression::Value(v) => *v,
@@ -73,10 +101,11 @@ impl Expression {
 
 mod prec {
     pub const LOWEST: u8 = 0;
-    pub const PLUS: u8 = 1;
-    pub const MUL: u8 = 2;
+    pub const COMPARE: u8 = 1;
+    pub const PLUS: u8 = 2;
+    pub const MUL: u8 = 3;
     pub const UNARY: u8 = 3;
-    pub const POW: u8 = 4;
+    pub const POW: u8 = 5;
 }
 
 #[derive(Debug)]
@@ -104,6 +133,10 @@ fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
     use crate::token::TokenKind::*;
 
     match tok {
+        Gt | GtEq | Lt | LtEq => Some(OpInfo {
+            prec: prec::COMPARE,
+            assoc: Assoc::Left,
+        }),
         Plus | Minus => Some(OpInfo {
             prec: prec::PLUS,
             assoc: Assoc::Left,
@@ -120,8 +153,10 @@ fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
     }
 }
 
+
 /// 単項演算子としてトークンが持つ[`OpInfo`]を返す。
 /// トークンが単項演算子ではない場合、Noneを返す。
+#[allow(dead_code)]
 fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
     use crate::token::TokenKind::*;
 
