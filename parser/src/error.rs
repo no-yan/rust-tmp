@@ -1,10 +1,10 @@
 use std::{error::Error, fmt};
 
-use crate::{lexer::LexicalError, parser::SyntaxError, token::Span};
-
-pub trait Spanned {
-    fn span(&self) -> Option<Span>;
-}
+use crate::{
+    lexer::LexicalError,
+    parser::SyntaxError,
+    token::{Span, Spanned},
+};
 
 #[derive(Debug, PartialEq)]
 pub enum CompilerError {

@@ -4,6 +4,10 @@ pub struct Span {
     pub end: usize,
 }
 
+pub trait Spanned {
+    fn span(&self) -> Option<Span>;
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenKind {
     Plus,

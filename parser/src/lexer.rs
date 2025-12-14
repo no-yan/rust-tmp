@@ -1,9 +1,6 @@
 use std::{error::Error, fmt};
 
-use crate::{
-    error::Spanned,
-    token::{Span, Token},
-};
+use crate::token::{Span, Spanned, Token};
 
 pub type LexResult<T> = Result<T, LexicalError>;
 

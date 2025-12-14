@@ -1,9 +1,6 @@
 use std::{error::Error, fmt, iter::Peekable};
 
-use crate::{
-    error::Spanned,
-    token::{Span, Token, TokenKind},
-};
+use crate::token::{Span, Spanned, Token, TokenKind};
 
 #[derive(Debug, PartialEq)]
 pub enum SyntaxError {
@@ -152,7 +149,6 @@ fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
         _ => None,
     }
 }
-
 
 /// 単項演算子としてトークンが持つ[`OpInfo`]を返す。
 /// トークンが単項演算子ではない場合、Noneを返す。
