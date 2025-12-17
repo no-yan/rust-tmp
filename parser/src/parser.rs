@@ -1,6 +1,9 @@
 use std::{error::Error, fmt, iter::Peekable};
 
-use crate::token::{Span, Spanned, Token, TokenKind};
+use crate::{
+    ast::{Assoc, BinaryOp, Expression, UnaryOp, prec},
+    token::{Span, Spanned, Token, TokenKind},
+};
 
 #[derive(Debug, PartialEq)]
 pub enum SyntaxError {
@@ -34,137 +37,6 @@ impl Spanned for SyntaxError {
 
 pub type ParseResult<T> = Result<T, SyntaxError>;
 
-#[derive(Debug)]
-pub enum Expression {
-    Unary {
-        op: TokenKind,
-        expr: Box<Expression>,
-    },
-    Binary {
-        lhs: Box<Expression>,
-        op: TokenKind,
-        rhs: Box<Expression>,
-    },
-    Value(i32),
-}
-
-impl Expression {
-    pub fn eval(&self) -> i32 {
-        match self {
-            Expression::Unary { op, expr } => match op {
-                TokenKind::Minus => -expr.eval(),
-                _ => unreachable!(),
-            },
-            Expression::Binary { lhs, op, rhs } => match op {
-                TokenKind::Plus => lhs.eval() + rhs.eval(),
-                TokenKind::Minus => lhs.eval() - rhs.eval(),
-                TokenKind::Mul => lhs.eval() * rhs.eval(),
-                TokenKind::Div => lhs.eval() / rhs.eval(),
-                TokenKind::Pow => lhs.eval().pow(rhs.eval() as u32),
-                TokenKind::Gt => {
-                    if lhs.eval() > rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                TokenKind::GtEq => {
-                    if lhs.eval() >= rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                TokenKind::Lt => {
-                    if lhs.eval() < rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                TokenKind::LtEq => {
-                    if lhs.eval() <= rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                _ => unreachable!(),
-            },
-            Expression::Value(v) => *v,
-        }
-    }
-}
-
-mod prec {
-    pub const LOWEST: u8 = 0;
-    pub const COMPARE: u8 = 1;
-    pub const PLUS: u8 = 2;
-    pub const MUL: u8 = 3;
-    pub const UNARY: u8 = 3;
-    pub const POW: u8 = 5;
-}
-
-#[derive(Debug)]
-enum Assoc {
-    Left,
-    Right,
-}
-
-/// 演算子の優先度と結合順序を表す。
-#[derive(Debug)]
-struct OpInfo {
-    prec: u8,
-    assoc: Assoc,
-}
-
-impl OpInfo {
-    fn binds_at(&self, min_prec: u8) -> bool {
-        self.prec >= min_prec
-    }
-}
-
-/// 二項演算子としてトークンが持つ[`OpInfo`]を返す。
-/// トークンが二項演算子ではない場合、Noneを返す。
-fn binary_op(tok: &TokenKind) -> Option<OpInfo> {
-    use crate::token::TokenKind::*;
-
-    match tok {
-        Gt | GtEq | Lt | LtEq => Some(OpInfo {
-            prec: prec::COMPARE,
-            assoc: Assoc::Left,
-        }),
-        Plus | Minus => Some(OpInfo {
-            prec: prec::PLUS,
-            assoc: Assoc::Left,
-        }),
-        Mul | Div => Some(OpInfo {
-            prec: prec::MUL,
-            assoc: Assoc::Left,
-        }),
-        Pow => Some(OpInfo {
-            prec: prec::POW,
-            assoc: Assoc::Right,
-        }),
-        _ => None,
-    }
-}
-
-/// 単項演算子としてトークンが持つ[`OpInfo`]を返す。
-/// トークンが単項演算子ではない場合、Noneを返す。
-#[allow(dead_code)]
-fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
-    use crate::token::TokenKind::*;
-
-    match tok {
-        Minus => Some(OpInfo {
-            prec: prec::UNARY,
-            assoc: Assoc::Left,
-        }),
-        _ => None,
-    }
-}
-
 /// 計算式を構文解析し、[`Expression`]を構築するパーサー。
 ///
 /// ## 仕様
@@ -190,6 +62,7 @@ fn unary_op(tok: &TokenKind) -> Option<OpInfo> {
 ///
 /// ### 文法
 ///
+/// Program -> Expr { ";" Expr } [ ';' ]
 /// E -> Expr(0)
 /// Expr(p) ->  Primary { BinOp Expr(q) }
 /// Primary -> Unary Expr(q) | "(" E ")" | v
@@ -248,25 +121,26 @@ impl Parser {
         let mut lhs = self.primary()?;
 
         while let Some(tok) = self.src.peek() {
-            let Some(op_info) = binary_op(&tok.kind) else {
+            let Ok(op) = BinaryOp::try_from(&tok.kind) else {
                 break;
             };
+            let info = op.op_info();
 
-            if !op_info.binds_at(min_prec) {
+            if !info.binds_at(min_prec) {
                 break;
             }
 
             // トークンを消費
-            let tok = self.src.next().unwrap();
+            let _ = self.src.next();
 
-            let next_prec = match op_info.assoc {
-                Assoc::Left => op_info.prec + 1,
-                Assoc::Right => op_info.prec,
+            let next_prec = match info.assoc {
+                Assoc::Left => info.prec + 1,
+                Assoc::Right => info.prec,
             };
             let rhs = self.expr(next_prec)?;
             lhs = Expression::Binary {
                 lhs: Box::new(lhs),
-                op: tok.kind,
+                op,
                 rhs: Box::new(rhs),
             };
         }
@@ -282,7 +156,7 @@ impl Parser {
             TokenKind::Minus => {
                 let expr = self.expr(prec::UNARY)?;
                 Expression::Unary {
-                    op: TokenKind::Minus,
+                    op: UnaryOp::Minus,
                     expr: Box::new(expr),
                 }
             }
@@ -290,7 +164,7 @@ impl Parser {
                 let expr = self.expr(prec::LOWEST)?;
                 if self.expect(TokenKind::RightParen).is_err() {
                     return Err(SyntaxError::UnmatchedLeftParen(tok));
-                };
+                }
                 expr
             }
             _ => return Err(SyntaxError::UnexpectedToken(tok)),
@@ -301,7 +175,7 @@ impl Parser {
 
     fn expect(&mut self, expected: TokenKind) -> Result<(), SyntaxError> {
         match self.src.next() {
-            Some(ref tok) if tok.kind == expected => Ok(()),
+            Some(tok) if tok.kind == expected => Ok(()),
             Some(tok) => Err(SyntaxError::UnexpectedToken(tok)),
             None => Err(SyntaxError::UnexpectedEof),
         }

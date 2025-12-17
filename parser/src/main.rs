@@ -1,3 +1,4 @@
+mod ast;
 mod error;
 mod lexer;
 mod parser;
@@ -11,6 +12,33 @@ use crate::{
     parser::Parser,
 };
 
+// TODO: refactor: astモジュールの切り出し
+// - [x] enum AST {expression(Expression)};
+// - [x] parser::Expression::binary, unary, valueをAST::expressionに移動
+//
+// TODO: 式のサポート
+// - [ ] EBNFを更新
+// - [ ] ASTにProgram, Statementを追加
+// - [ ] トークンに";"を追加
+// - [ ] レキサで";"をサポート
+// - [ ] パーサでprogram, stmtをサポート
+//
+// TODO: refactor: Evaluatorの切り出し
+// - [ ] 計算式の評価をevaluatorに移動
+// - [ ] Environment構造体を作成し、evaluatorで使用
+// - [ ] eval_program, eval_expr()を実装
+//
+// TODO: 変数のサポート
+// - [ ] Token::Ident(String)
+// - [ ] Lex Ident
+// - [ ] Parse Ident
+// - [ ] Eval Ident
+//
+// TODO: 代入式のサポート
+// - [ ] トークンに"="を追加
+// - [ ] レキサで"="をサポート
+// - [ ] EBNFを更新
+// - [ ] パーサでstmtにAssignmentを追加
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let expr = Parser::new(tokens).parse()?;
