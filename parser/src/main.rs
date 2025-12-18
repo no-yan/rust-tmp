@@ -1,5 +1,6 @@
 mod ast;
 mod error;
+mod evaluator;
 mod lexer;
 mod parser;
 mod token;
@@ -11,6 +12,7 @@ use crate::{
     lexer::Lexer,
     parser::Parser,
 };
+use crate::evaluator::Evaluator;
 
 // TODO: refactor: astモジュールの切り出し
 // - [x] enum AST {expression(Expression)};
@@ -24,7 +26,6 @@ use crate::{
 // TODO: refactor: Evaluatorの切り出し
 // - [ ] 計算式の評価をevaluatorに移動
 // - [ ] Environment構造体を作成し、evaluatorで使用
-// - [ ] eval_program, eval_expr()を実装
 //
 // TODO: 変数のサポート
 // - [ ] ASTにProgram, Statementを追加
@@ -42,7 +43,9 @@ use crate::{
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let expr = Parser::new(tokens).parse()?;
-    Ok(expr.eval())
+    let evaluator = Evaluator::new();
+
+    Ok(evaluator.eval(&expr))
 }
 
 fn main() -> ExitCode {
@@ -67,12 +70,15 @@ fn main() -> ExitCode {
 mod tests {
     use super::*;
     use crate::{parser::SyntaxError, token::TokenKind::*};
+    use crate::evaluator::Evaluator;
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex()?;
-        let ast = Parser::new(tokens).parse()?;
-        Ok(ast.eval())
+        let expr = Parser::new(tokens).parse()?;
+        let evaluator = Evaluator::new();
+
+        Ok(evaluator.eval(&expr))
     }
 
     #[test]

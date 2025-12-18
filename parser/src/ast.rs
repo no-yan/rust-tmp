@@ -106,48 +106,4 @@ pub enum Expression {
     Value(i32),
 }
 
-impl Expression {
-    pub fn eval(&self) -> i32 {
-        match self {
-            Expression::Unary { op, expr } => match op {
-                UnaryOp::Minus => -expr.eval(),
-            },
-            Expression::Binary { lhs, op, rhs } => match op {
-                BinaryOp::Plus => lhs.eval() + rhs.eval(),
-                BinaryOp::Minus => lhs.eval() - rhs.eval(),
-                BinaryOp::Mul => lhs.eval() * rhs.eval(),
-                BinaryOp::Div => lhs.eval() / rhs.eval(),
-                BinaryOp::Pow => lhs.eval().pow(rhs.eval() as u32),
-                BinaryOp::Gt => {
-                    if lhs.eval() > rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                BinaryOp::GtEq => {
-                    if lhs.eval() >= rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                BinaryOp::Lt => {
-                    if lhs.eval() < rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-                BinaryOp::LtEq => {
-                    if lhs.eval() <= rhs.eval() {
-                        1
-                    } else {
-                        0
-                    }
-                }
-            },
-            Expression::Value(v) => *v,
-        }
-    }
-}
+impl Expression {}

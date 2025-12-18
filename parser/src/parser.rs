@@ -90,7 +90,8 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// let tokens = lexer.lex()?;
 ///
 /// let expr = Parser::new(tokens).parse()?;
-/// let v = expr.eval();
+/// let evaluator = Evaluator::new();
+/// let v = evaluator.eval(&expr);
 /// assert_eq!(v, 3);
 /// ```
 pub struct Parser {
@@ -111,7 +112,9 @@ impl Parser {
         let mut last = self.expr(prec::LOWEST)?;
         while !self.is_eof() {
             self.expect(TokenKind::Semicolon)?;
-            if self.is_eof() { break; }
+            if self.is_eof() {
+                break;
+            }
             last = self.expr(prec::LOWEST)?;
         }
 
