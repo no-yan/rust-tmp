@@ -82,6 +82,7 @@ impl<'a> Lexer<'a> {
             '^' => Pow,
             '(' => LeftParen,
             ')' => RightParen,
+            ';' => Semicolon,
             c if c.is_ascii_digit() => {
                 let num = self.next_number();
                 Num(num)

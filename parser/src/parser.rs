@@ -108,13 +108,14 @@ impl Parser {
         // Precedence climbing algorithmを使用してパースを行う。
         // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
 
-        let expr = self.expr(prec::LOWEST)?;
-
-        if let Some(tok) = self.src.next() {
-            return Err(SyntaxError::UnexpectedToken(tok));
+        let mut last = self.expr(prec::LOWEST)?;
+        while !self.is_eof() {
+            self.expect(TokenKind::Semicolon)?;
+            if self.is_eof() { break; }
+            last = self.expr(prec::LOWEST)?;
         }
 
-        Ok(expr)
+        Ok(last)
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
@@ -179,5 +180,9 @@ impl Parser {
             Some(tok) => Err(SyntaxError::UnexpectedToken(tok)),
             None => Err(SyntaxError::UnexpectedEof),
         }
+    }
+
+    fn is_eof(&mut self) -> bool {
+        self.src.peek().is_none()
     }
 }

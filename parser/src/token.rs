@@ -25,6 +25,8 @@ pub enum TokenKind {
 
     LeftParen,
     RightParen,
+
+    Semicolon,
 }
 
 #[derive(Debug, PartialEq, Clone)]

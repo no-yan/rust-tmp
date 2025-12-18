@@ -17,11 +17,9 @@ use crate::{
 // - [x] parser::Expression::binary, unary, valueをAST::expressionに移動
 //
 // TODO: 式のサポート
-// - [ ] EBNFを更新
-// - [ ] ASTにProgram, Statementを追加
-// - [ ] トークンに";"を追加
-// - [ ] レキサで";"をサポート
-// - [ ] パーサでprogram, stmtをサポート
+// - [x] EBNFを更新
+// - [x] トークンに";"を追加
+// - [x] レキサで";"をサポート
 //
 // TODO: refactor: Evaluatorの切り出し
 // - [ ] 計算式の評価をevaluatorに移動
@@ -29,6 +27,8 @@ use crate::{
 // - [ ] eval_program, eval_expr()を実装
 //
 // TODO: 変数のサポート
+// - [ ] ASTにProgram, Statementを追加
+// - [ ] パーサでprogram, stmtをサポート
 // - [ ] Token::Ident(String)
 // - [ ] Lex Ident
 // - [ ] Parse Ident
