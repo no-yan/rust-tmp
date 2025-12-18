@@ -5,7 +5,7 @@ pub mod prec {
     pub const COMPARE: u8 = 1;
     pub const PLUS: u8 = 2;
     pub const MUL: u8 = 3;
-    pub const UNARY: u8 = 3;
+    pub const UNARY: u8 = 4;
     pub const POW: u8 = 5;
 }
 
