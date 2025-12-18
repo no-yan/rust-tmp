@@ -15,6 +15,7 @@ pub enum TokenKind {
     Mul,
     Div,
     Pow,
+    Eq,
 
     Gt,   // >
     Lt,   // <
@@ -22,6 +23,7 @@ pub enum TokenKind {
     LtEq, // <=
 
     Num(i32),
+    Ident(String),
 
     LeftParen,
     RightParen,

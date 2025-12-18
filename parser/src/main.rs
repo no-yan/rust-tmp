@@ -9,43 +9,17 @@ use std::process::ExitCode;
 
 use crate::{
     error::{CompilerError, format_error},
+    evaluator::Evaluator,
     lexer::Lexer,
     parser::Parser,
 };
-use crate::evaluator::Evaluator;
 
-// TODO: refactor: astモジュールの切り出し
-// - [x] enum AST {expression(Expression)};
-// - [x] parser::Expression::binary, unary, valueをAST::expressionに移動
-//
-// TODO: 式のサポート
-// - [x] EBNFを更新
-// - [x] トークンに";"を追加
-// - [x] レキサで";"をサポート
-//
-// TODO: refactor: Evaluatorの切り出し
-// - [ ] 計算式の評価をevaluatorに移動
-// - [ ] Environment構造体を作成し、evaluatorで使用
-//
-// TODO: 変数のサポート
-// - [ ] ASTにProgram, Statementを追加
-// - [ ] パーサでprogram, stmtをサポート
-// - [ ] Token::Ident(String)
-// - [ ] Lex Ident
-// - [ ] Parse Ident
-// - [ ] Eval Ident
-//
-// TODO: 代入式のサポート
-// - [ ] トークンに"="を追加
-// - [ ] レキサで"="をサポート
-// - [ ] EBNFを更新
-// - [ ] パーサでstmtにAssignmentを追加
 fn run(input: &str) -> Result<i32, CompilerError> {
     let tokens = Lexer::new(input).lex()?;
-    let expr = Parser::new(tokens).parse()?;
-    let evaluator = Evaluator::new();
+    let program = Parser::new(tokens).parse()?;
+    let mut evaluator = Evaluator::new();
 
-    Ok(evaluator.eval(&expr))
+    Ok(evaluator.eval(&program))
 }
 
 fn main() -> ExitCode {
@@ -69,14 +43,13 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parser::SyntaxError, token::TokenKind::*};
-    use crate::evaluator::Evaluator;
+    use crate::{evaluator::Evaluator, parser::SyntaxError, token::TokenKind::*};
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
         let tokens = lexer.lex()?;
         let expr = Parser::new(tokens).parse()?;
-        let evaluator = Evaluator::new();
+        let mut evaluator = Evaluator::new();
 
         Ok(evaluator.eval(&expr))
     }
@@ -210,5 +183,20 @@ mod tests {
     fn unexpected_eof() {
         let result = parse("-");
         assert_eq!(result, Err(SyntaxError::UnexpectedEof.into()));
+    }
+
+    #[test]
+    fn assignment() {
+        let result = parse("x=2; x");
+        assert_eq!(result, Ok(2));
+    }
+
+    #[test]
+    fn invalid_assignment() {
+        let result = parse("1=2");
+        assert_eq!(
+            result,
+            Err(SyntaxError::InvalidAssignmentTarget(tok!(Eq, 1, 2)).into())
+        );
     }
 }

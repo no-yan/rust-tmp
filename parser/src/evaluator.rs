@@ -1,56 +1,102 @@
-use crate::ast::Expression;
-use crate::ast::BinaryOp;
-use crate::ast::UnaryOp;
+use std::collections::HashMap;
 
-pub struct Evaluator {}
+use crate::ast::{BinaryOp, Expression, Program, Statement, UnaryOp};
+
+struct Environment {
+    register: HashMap<String, i32>,
+}
+
+impl Environment {
+    pub fn new() -> Self {
+        Self {
+            register: HashMap::new(),
+        }
+    }
+
+    pub fn get(&self, name: &str) -> Option<i32> {
+        self.register.get(name).copied()
+    }
+
+    pub fn define(&mut self, name: &str, n: i32) {
+        self.register.insert(name.to_string(), n);
+    }
+}
+
+pub struct Evaluator {
+    env: Environment,
+}
 
 impl Evaluator {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            env: Environment::new(),
+        }
     }
 
-    #[allow(clippy::only_used_in_recursion)]
-    pub fn eval(&self, expr: &Expression) -> i32 {
+    pub fn eval(&mut self, program: &Program) -> i32 {
+        let mut result = 0;
+        for s in &program.body {
+            result = self.stmt(s);
+        }
+        result
+    }
+
+    fn stmt(&mut self, stmt: &Statement) -> i32 {
+        match stmt {
+            Statement::ExpressionStatement(e) => self.expr(e),
+        }
+    }
+
+    fn expr(&mut self, expr: &Expression) -> i32 {
         match expr {
             Expression::Unary { op, expr } => match op {
-                UnaryOp::Minus => -self.eval(expr),
+                UnaryOp::Minus => -self.expr(expr),
             },
             Expression::Binary { lhs, op, rhs } => match op {
-                BinaryOp::Plus => self.eval(lhs) + self.eval(rhs),
-                BinaryOp::Minus => self.eval(lhs) - self.eval(rhs),
-                BinaryOp::Mul => self.eval(lhs) * self.eval(rhs),
-                BinaryOp::Div => self.eval(lhs) / self.eval(rhs),
-                BinaryOp::Pow => self.eval(lhs).pow(self.eval(rhs) as u32),
+                BinaryOp::Plus => self.expr(lhs) + self.expr(rhs),
+                BinaryOp::Minus => self.expr(lhs) - self.expr(rhs),
+                BinaryOp::Mul => self.expr(lhs) * self.expr(rhs),
+                BinaryOp::Div => self.expr(lhs) / self.expr(rhs),
+                BinaryOp::Pow => self.expr(lhs).pow(self.expr(rhs) as u32),
                 BinaryOp::Gt => {
-                    if self.eval(lhs) > self.eval(rhs) {
+                    if self.expr(lhs) > self.expr(rhs) {
                         1
                     } else {
                         0
                     }
                 }
                 BinaryOp::GtEq => {
-                    if self.eval(lhs) >= self.eval(rhs) {
+                    if self.expr(lhs) >= self.expr(rhs) {
                         1
                     } else {
                         0
                     }
                 }
                 BinaryOp::Lt => {
-                    if self.eval(lhs) < self.eval(rhs) {
+                    if self.expr(lhs) < self.expr(rhs) {
                         1
                     } else {
                         0
                     }
                 }
                 BinaryOp::LtEq => {
-                    if self.eval(lhs) <= self.eval(rhs) {
+                    if self.expr(lhs) <= self.expr(rhs) {
                         1
                     } else {
                         0
                     }
                 }
+                BinaryOp::Assign => {
+                    let Expression::Var(name) = &**lhs else {
+                        unreachable!("Parser guarantees LHS is Var for Assign");
+                    };
+                    let v = self.expr(rhs);
+                    self.env.define(name, v);
+                    v
+                }
             },
             Expression::Value(v) => *v,
+            Expression::Var(name) => self.env.get(name).unwrap(),
         }
     }
 }

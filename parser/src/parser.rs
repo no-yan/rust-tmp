@@ -1,7 +1,7 @@
 use std::{error::Error, fmt, iter::Peekable};
 
 use crate::{
-    ast::{Assoc, BinaryOp, Expression, UnaryOp, prec},
+    ast::{Assoc, BinaryOp, Expression, Program, Statement, UnaryOp, prec},
     token::{Span, Spanned, Token, TokenKind},
 };
 
@@ -9,6 +9,7 @@ use crate::{
 pub enum SyntaxError {
     UnmatchedLeftParen(Token),
     UnexpectedToken(Token),
+    InvalidAssignmentTarget(Token),
     UnexpectedEof,
 }
 
@@ -19,6 +20,9 @@ impl fmt::Display for SyntaxError {
         match self {
             SyntaxError::UnmatchedLeftParen(_) => write!(f, "Unmatched left parenthesis"),
             SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok.kind),
+            SyntaxError::InvalidAssignmentTarget(tok) => {
+                write!(f, "Invalid assignment target: {:?}", tok.kind)
+            }
             SyntaxError::UnexpectedEof => write!(f, "Unexpected end of file"),
         }
     }
@@ -62,11 +66,14 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 ///
 /// ### 文法
 ///
-/// Program -> Expr { ";" Expr } [ ';' ]
+/// Program -> Stmt { ";" Stmt } [ ';' ]
+/// Stmt -> E
+///
 /// E -> Expr(0)
 /// Expr(p) ->  Primary { BinOp Expr(q) }
-/// Primary -> Unary Expr(q) | "(" E ")" | v
-/// BinOp   -> "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
+/// Primary -> Unary Expr(q) | "(" E ")" | Ident | v
+/// Ident -> letter { letter | unicode_digit }
+/// BinOp   -> "=" | "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
 /// Unary   -> "-"
 ///
 /// ### AST の構造
@@ -89,9 +96,9 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// let mut lexer = Lexer::new("1+2");
 /// let tokens = lexer.lex()?;
 ///
-/// let expr = Parser::new(tokens).parse()?;
-/// let evaluator = Evaluator::new();
-/// let v = evaluator.eval(&expr);
+/// let program = Parser::new(tokens).parse()?;
+/// let mut evaluator = Evaluator::new();
+/// let v = evaluator.eval(&program);
 /// assert_eq!(v, 3);
 /// ```
 pub struct Parser {
@@ -105,20 +112,34 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> ParseResult<Expression> {
+    pub fn parse(&mut self) -> ParseResult<Program> {
         // Precedence climbing algorithmを使用してパースを行う。
         // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
 
-        let mut last = self.expr(prec::LOWEST)?;
+        self.program()
+    }
+
+    fn program(&mut self) -> ParseResult<Program> {
+        let mut stmt_list = vec![];
+
+        let stmt = self.stmt()?;
+        stmt_list.push(stmt);
         while !self.is_eof() {
             self.expect(TokenKind::Semicolon)?;
             if self.is_eof() {
                 break;
             }
-            last = self.expr(prec::LOWEST)?;
+            let stmt = self.stmt()?;
+            stmt_list.push(stmt);
         }
 
-        Ok(last)
+        Ok(Program { body: stmt_list })
+    }
+
+    fn stmt(&mut self) -> ParseResult<Statement> {
+        let expr = self.expr(prec::LOWEST)?;
+
+        Ok(Statement::ExpressionStatement(expr))
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
@@ -132,6 +153,13 @@ impl Parser {
 
             if !info.binds_at(min_prec) {
                 break;
+            }
+
+            // 代入先が識別子でない場合、構文エラー
+            // e.g. "1 = 2"
+            if matches!(op, BinaryOp::Assign) && !matches!(lhs, Expression::Var(_)) {
+                // TODO: エラーメッセージにlhsを表示する
+                return Err(SyntaxError::InvalidAssignmentTarget(tok.clone()));
             }
 
             // トークンを消費
@@ -171,6 +199,7 @@ impl Parser {
                 }
                 expr
             }
+            TokenKind::Ident(name) => Expression::Var(name),
             _ => return Err(SyntaxError::UnexpectedToken(tok)),
         };
 

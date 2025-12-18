@@ -83,10 +83,7 @@ impl<'a> Lexer<'a> {
             '(' => LeftParen,
             ')' => RightParen,
             ';' => Semicolon,
-            c if c.is_ascii_digit() => {
-                let num = self.next_number();
-                Num(num)
-            }
+            '=' => Eq,
             '<' => match self.peek() {
                 Some('=') => {
                     self.bump();
@@ -101,6 +98,14 @@ impl<'a> Lexer<'a> {
                 }
                 Some(_) | None => Gt,
             },
+            c if c.is_ascii_digit() => {
+                let num = self.next_number();
+                Num(num)
+            }
+            c if c.is_alphabetic() => {
+                let ident = self.next_ident();
+                Ident(ident)
+            }
             c => {
                 return Err(LexicalError::InvalidToken(
                     c.to_string(),
@@ -157,6 +162,21 @@ impl<'a> Lexer<'a> {
         let num_str = &self.input[start..self.pos];
         // Safety: ascii_digitの文字列で構成されているため、安全にパースできる
         num_str.parse::<i32>().unwrap()
+    }
+
+    pub fn next_ident(&mut self) -> String {
+        // この関数に渡ってくる段階ですでに１文字目が読まれている
+        let start = self.pos - 1;
+        while let Some(c) = self.peek() {
+            if c.is_alphanumeric() {
+                self.bump();
+            } else {
+                break;
+            }
+        }
+
+        let ident_str = &self.input[start..self.pos];
+        ident_str.to_string()
     }
 }
 
@@ -237,6 +257,24 @@ mod test {
                 tok!(GtEq, 8, 10),
                 tok!(Num(2), 10, 11),
                 tok!(RightParen, 11, 12),
+            ]
+        );
+    }
+
+    #[test]
+    fn assign() {
+        let input = "x=1; x";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                tok!(Ident("x".to_string()), 0, 1),
+                tok!(Eq, 1, 2),
+                tok!(Num(1), 2, 3),
+                tok!(Semicolon, 3, 4),
+                tok!(Ident("x".to_string()), 5, 6),
             ]
         );
     }
