@@ -13,12 +13,12 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, name: &str) -> Option<i32> {
-        self.register.get(name).copied()
-    }
-
     pub fn define(&mut self, name: &str, n: i32) {
         self.register.insert(name.to_string(), n);
+    }
+
+    pub fn get(&self, name: &str) -> Option<i32> {
+        self.register.get(name).copied()
     }
 }
 
