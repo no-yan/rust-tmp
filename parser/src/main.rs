@@ -220,4 +220,10 @@ mod tests {
 
         assert_eq!(result, Ok(45),);
     }
+
+    #[test]
+    fn fibonatti() {
+        let result = parse("n=10; a=0; b=1; for (i=0; i<n; i=i+1) { tmp = a; a = b; b = tmp + b;} a;");
+        assert_eq!(result, Ok(55));
+    }
 }
