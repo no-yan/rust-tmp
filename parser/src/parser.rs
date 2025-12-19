@@ -1,7 +1,7 @@
 use std::{error::Error, fmt, iter::Peekable};
 
 use crate::{
-    ast::{Assoc, BinaryOp, Expression, If, Program, Statement, UnaryOp, prec},
+    ast::{Assoc, BinaryOp, Expression, If, Program, Statement, UnaryOp, While, prec},
     token::{Span, Spanned, Token, TokenKind},
 };
 
@@ -67,8 +67,9 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// ### 文法
 ///
 /// Program -> Stmt { Stmt }
-/// Stmt    -> If | E
+/// Stmt    -> If | While | E
 /// If      -> "if" "(" E ")" "{" { Stmt ";" } "}"
+/// While   -> "while" "(" E ")" "{" { Stmt ";" } "}"
 ///
 /// E       -> Expr(0) ";"
 /// Expr(p) -> Primary { BinOp Expr(q) }
@@ -138,6 +139,7 @@ impl Parser {
 
         match tok.kind {
             TokenKind::If => Ok(self.r#if()?),
+            TokenKind::While => Ok(self.r#while()?),
             _ => {
                 let expr = self.expr(prec::LOWEST)?;
                 self.expect(TokenKind::Semicolon)?;
@@ -167,6 +169,26 @@ impl Parser {
         Ok(Statement::If(If { cond, then }))
     }
 
+    fn r#while(&mut self) -> ParseResult<Statement> {
+        // While   -> "while" "(" E ")" "{" { Stmt ";" } "}"
+        self.src.next();
+        self.expect(TokenKind::LeftParen)?;
+        let cond = self.expr(prec::LOWEST)?;
+        self.expect(TokenKind::RightParen)?;
+
+        self.expect(TokenKind::LeftBlock)?;
+
+        let mut body = vec![];
+        while let Some(tok) = self.src.peek()
+            && tok.kind != TokenKind::RightBlock
+        {
+            body.push(self.stmt()?);
+        }
+
+        self.expect(TokenKind::RightBlock)?;
+
+        Ok(Statement::While(While { cond, body }))
+    }
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
         let mut lhs = self.primary()?;
 

@@ -29,10 +29,10 @@ fn run(input: &str) -> Result<i32, CompilerError> {
 // - [x] evaluate
 //
 // TODO: while文のサポート
-// - [ ] token `while`
-// - [ ] lex
-// - [ ] parse while
-// - [ ] evaluate
+// - [x] token `while`
+// - [x] lex
+// - [x] parse while
+// - [x] evaluate
 //
 // TODO: for文のサポート
 // - [ ] token `for`
@@ -221,9 +221,13 @@ mod tests {
     fn if_statement() {
         let result = parse("x=0; if (1>=0) {x=2;} x;");
 
-        assert_eq!(
-            result,
-            Ok(2),
-        );
+        assert_eq!(result, Ok(2),);
+    }
+
+    #[test]
+    fn while_statement() {
+        let result = parse("x=0; while(x<1){x=1;} x;");
+
+        assert_eq!(result, Ok(1),);
     }
 }

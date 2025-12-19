@@ -108,6 +108,7 @@ impl<'a> Lexer<'a> {
                 let ident = self.next_ident();
                 match ident {
                     "if" => If,
+                    "while" => While,
                     _ => Ident(ident.to_string()),
                 }
             }
@@ -313,6 +314,24 @@ mod test {
                 tok!(Num(2), 13, 14),
                 tok!(Semicolon, 14, 15),
                 tok!(RightBlock, 15, 16),
+            ]
+        );
+    }
+
+    #[test]
+    fn r#while() {
+        let input = "while(){}";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                tok!(While, 0, 5),
+                tok!(LeftParen, 5, 6),
+                tok!(RightParen, 6, 7),
+                tok!(LeftBlock, 7, 8),
+                tok!(RightBlock, 8, 9),
             ]
         );
     }

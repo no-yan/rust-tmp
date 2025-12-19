@@ -22,15 +22,16 @@ pub enum TokenKind {
     GtEq, // >=
     LtEq, // <=
 
-    If,         // if
-    LeftBlock,  // {
-    RightBlock, // }
+    If,
+    While,
 
     Num(i32),
     Ident(String),
 
-    LeftParen,
-    RightParen,
+    LeftParen,  // (
+    RightParen, // )
+    LeftBlock,  // {
+    RightBlock, // }
 
     Semicolon,
 }

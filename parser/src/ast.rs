@@ -121,9 +121,16 @@ pub struct If {
 }
 
 #[derive(Debug)]
+pub struct While {
+    pub cond: Expression,
+    pub body: Vec<Statement>,
+}
+
+#[derive(Debug)]
 pub enum Statement {
     ExpressionStatement(Expression),
     If(If),
+    While(While),
 }
 
 #[derive(Debug)]
