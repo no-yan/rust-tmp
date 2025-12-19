@@ -1,7 +1,7 @@
 use std::{error::Error, fmt, iter::Peekable};
 
 use crate::{
-    ast::{Assoc, BinaryOp, Expression, Program, Statement, UnaryOp, prec},
+    ast::{Assoc, BinaryOp, Expression, If, Program, Statement, UnaryOp, prec},
     token::{Span, Spanned, Token, TokenKind},
 };
 
@@ -66,10 +66,11 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 ///
 /// ### 文法
 ///
-/// Program -> Stmt { ";" Stmt } [ ';' ]
-/// Stmt    -> E
+/// Program -> Stmt { Stmt }
+/// Stmt    -> If | E
+/// If      -> "if" "(" E ")" "{" { Stmt ";" } "}"
 ///
-/// E       -> Expr(0)
+/// E       -> Expr(0) ";"
 /// Expr(p) -> Primary { BinOp Expr(q) }
 /// Primary -> Unary Expr(q) | "(" E ")" | Ident | v
 /// Ident   -> letter { letter | unicode_digit }
@@ -125,10 +126,6 @@ impl Parser {
         let stmt = self.stmt()?;
         stmt_list.push(stmt);
         while !self.is_eof() {
-            self.expect(TokenKind::Semicolon)?;
-            if self.is_eof() {
-                break;
-            }
             let stmt = self.stmt()?;
             stmt_list.push(stmt);
         }
@@ -137,9 +134,37 @@ impl Parser {
     }
 
     fn stmt(&mut self) -> ParseResult<Statement> {
-        let expr = self.expr(prec::LOWEST)?;
+        let tok = self.src.peek().ok_or(SyntaxError::UnexpectedEof)?;
 
-        Ok(Statement::ExpressionStatement(expr))
+        match tok.kind {
+            TokenKind::If => Ok(self.r#if()?),
+            _ => {
+                let expr = self.expr(prec::LOWEST)?;
+                self.expect(TokenKind::Semicolon)?;
+                Ok(Statement::ExpressionStatement(expr))
+            }
+        }
+    }
+
+    fn r#if(&mut self) -> ParseResult<Statement> {
+        // If      -> "if" "(" E ")" "{" { Stmt ";" } "}"
+        self.src.next();
+        self.expect(TokenKind::LeftParen)?;
+        let cond = self.expr(prec::LOWEST)?;
+        self.expect(TokenKind::RightParen)?;
+
+        self.expect(TokenKind::LeftBlock)?;
+
+        let mut then = vec![];
+        while let Some(tok) = self.src.peek()
+            && tok.kind != TokenKind::RightBlock
+        {
+            then.push(self.stmt()?);
+        }
+
+        self.expect(TokenKind::RightBlock)?;
+
+        Ok(Statement::If(If { cond, then }))
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {

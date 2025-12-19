@@ -22,6 +22,23 @@ fn run(input: &str) -> Result<i32, CompilerError> {
     Ok(evaluator.eval(&program))
 }
 
+// TODO: if文のサポート
+// - [x] token `if`の追加
+// - [x] lex
+// - [x] parse if
+// - [x] evaluate
+//
+// TODO: while文のサポート
+// - [ ] token `while`
+// - [ ] lex
+// - [ ] parse while
+// - [ ] evaluate
+//
+// TODO: for文のサポート
+// - [ ] token `for`
+// - [ ] lex
+// - [ ] parse while
+// - [ ] evaluate
 fn main() -> ExitCode {
     // 引数で式が与えられた場合はそれを入力として扱う
     // それ以外は標準入力にフォールバックする
@@ -56,102 +73,102 @@ mod tests {
 
     #[test]
     fn sum() {
-        let result = parse("1 + 2");
+        let result = parse("1 + 2;");
         assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn difference() {
-        let result = parse("1 - 2 - 3");
+        let result = parse("1 - 2 - 3;");
         assert_eq!(result, Ok(-4));
     }
 
     #[test]
     fn sum_3_operand() {
-        let result = parse("1 + 2 + 3");
+        let result = parse("1 + 2 + 3;");
         assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn prod_3_operand() {
-        let result = parse("1*2*3");
+        let result = parse("1*2*3;");
         assert_eq!(result, Ok(6));
     }
 
     #[test]
     fn process_with_priority() {
-        let result = parse("1+2*3");
+        let result = parse("1+2*3;");
         assert_eq!(result, Ok(7));
     }
 
     #[test]
     fn without_space() {
-        let result = parse("1+2");
+        let result = parse("1+2;");
         assert_eq!(result, Ok(3));
     }
 
     #[test]
     fn with_paren() {
-        let result = parse("(1+2)");
+        let result = parse("(1+2);");
         assert_eq!(result, Ok(3));
     }
     #[test]
     fn with_paren_precedence() {
-        let result = parse("(1+2)*3");
+        let result = parse("(1+2)*3;");
         assert_eq!(result, Ok(9));
     }
 
     #[test]
     fn power() {
-        let result = parse("10^2");
+        let result = parse("10^2;");
         assert_eq!(result, Ok(100));
     }
 
     #[test]
     fn gt_true() {
-        let result = parse("1>0");
+        let result = parse("1>0;");
         assert_eq!(result, Ok(1));
     }
 
     #[test]
     fn gt_false() {
-        let result = parse("1>2");
+        let result = parse("1>2;");
         assert_eq!(result, Ok(0));
     }
 
     #[test]
     fn gt_eq_true() {
-        let result = parse("1>=1");
+        let result = parse("1>=1;");
         assert_eq!(result, Ok(1));
     }
 
     #[test]
     fn gt_eq_false() {
-        let result = parse("1>=2");
+        let result = parse("1>=2;");
         assert_eq!(result, Ok(0));
     }
 
     #[test]
     fn lt_true() {
-        let result = parse("1<2");
+        let result = parse("1<2;");
         assert_eq!(result, Ok(1));
     }
 
     #[test]
     fn lt_false() {
-        let result = parse("1<0");
+        let result = parse("1<0;");
         assert_eq!(result, Ok(0));
     }
 
     #[test]
     fn lt_eq_true() {
-        let result = parse("1<=1");
+        let result = parse("1<=1;");
         assert_eq!(result, Ok(1));
     }
 
     #[test]
     fn lt_eq_false() {
-        let result = parse("1<=0");
+        let result = parse("1<=0;");
         assert_eq!(result, Ok(0));
     }
 
@@ -175,7 +192,7 @@ mod tests {
 
     #[test]
     fn unary_minus() {
-        let result = parse("-1");
+        let result = parse("-1;");
         assert_eq!(result, Ok(-1));
     }
 
@@ -187,16 +204,26 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let result = parse("x=2; x");
+        let result = parse("x=2; x;");
         assert_eq!(result, Ok(2));
     }
 
     #[test]
     fn invalid_assignment() {
-        let result = parse("1=2");
+        let result = parse("1=2;");
         assert_eq!(
             result,
             Err(SyntaxError::InvalidAssignmentTarget(tok!(Eq, 1, 2)).into())
+        );
+    }
+
+    #[test]
+    fn if_statement() {
+        let result = parse("x=0; if (1>=0) {x=2;} x;");
+
+        assert_eq!(
+            result,
+            Ok(2),
         );
     }
 }

@@ -115,8 +115,15 @@ pub enum Expression {
 }
 
 #[derive(Debug)]
+pub struct If {
+    pub cond: Expression,
+    pub then: Vec<Statement>,
+}
+
+#[derive(Debug)]
 pub enum Statement {
     ExpressionStatement(Expression),
+    If(If),
 }
 
 #[derive(Debug)]

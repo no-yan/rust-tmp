@@ -22,6 +22,10 @@ pub enum TokenKind {
     GtEq, // >=
     LtEq, // <=
 
+    If,         // if
+    LeftBlock,  // {
+    RightBlock, // }
+
     Num(i32),
     Ident(String),
 

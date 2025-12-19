@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{BinaryOp, Expression, Program, Statement, UnaryOp};
+use crate::ast::{BinaryOp, Expression, Program, Statement, UnaryOp, If};
 
 struct Environment {
     register: HashMap<String, i32>,
@@ -44,6 +44,15 @@ impl Evaluator {
     fn stmt(&mut self, stmt: &Statement) -> i32 {
         match stmt {
             Statement::ExpressionStatement(e) => self.expr(e),
+            Statement::If(If{cond, then}) => {
+                let mut result = 0;
+                if self.expr(cond) > 0  {
+                    for s in then {
+                        result = self.stmt(s);
+                    }
+                }
+                result
+            }
         }
     }
 

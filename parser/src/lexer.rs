@@ -84,6 +84,8 @@ impl<'a> Lexer<'a> {
             ')' => RightParen,
             ';' => Semicolon,
             '=' => Eq,
+            '{' => LeftBlock,
+            '}' => RightBlock,
             '<' => match self.peek() {
                 Some('=') => {
                     self.bump();
@@ -104,7 +106,10 @@ impl<'a> Lexer<'a> {
             }
             c if c.is_alphabetic() => {
                 let ident = self.next_ident();
-                Ident(ident)
+                match ident {
+                    "if" => If,
+                    _ => Ident(ident.to_string()),
+                }
             }
             c => {
                 return Err(LexicalError::InvalidToken(
@@ -164,7 +169,7 @@ impl<'a> Lexer<'a> {
         num_str.parse::<i32>().unwrap()
     }
 
-    pub fn next_ident(&mut self) -> String {
+    pub fn next_ident(&mut self) -> &str {
         // この関数に渡ってくる段階ですでに１文字目が読まれている
         let start = self.pos - 1;
         while let Some(c) = self.peek() {
@@ -175,8 +180,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        let ident_str = &self.input[start..self.pos];
-        ident_str.to_string()
+        &self.input[start..self.pos]
     }
 }
 
@@ -275,6 +279,40 @@ mod test {
                 tok!(Num(1), 2, 3),
                 tok!(Semicolon, 3, 4),
                 tok!(Ident("x".to_string()), 5, 6),
+            ]
+        );
+    }
+
+    #[test]
+    fn r#if() {
+        let input = "if";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(result, vec![tok!(If, 0, 2),]);
+    }
+
+    #[test]
+    fn r#if_statement() {
+        let input = "if (1>=0) {x=2;}";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                tok!(If, 0, 2),
+                tok!(LeftParen, 3, 4),
+                tok!(Num(1), 4, 5),
+                tok!(GtEq, 5, 7),
+                tok!(Num(0), 7, 8),
+                tok!(RightParen, 8, 9),
+                tok!(LeftBlock, 10, 11),
+                tok!(Ident("x".to_string()), 11, 12),
+                tok!(Eq, 12, 13),
+                tok!(Num(2), 13, 14),
+                tok!(Semicolon, 14, 15),
+                tok!(RightBlock, 15, 16),
             ]
         );
     }
