@@ -22,23 +22,6 @@ fn run(input: &str) -> Result<i32, CompilerError> {
     Ok(evaluator.eval(&program))
 }
 
-// TODO: if文のサポート
-// - [x] token `if`の追加
-// - [x] lex
-// - [x] parse if
-// - [x] evaluate
-//
-// TODO: while文のサポート
-// - [x] token `while`
-// - [x] lex
-// - [x] parse while
-// - [x] evaluate
-//
-// TODO: for文のサポート
-// - [ ] token `for`
-// - [ ] lex
-// - [ ] parse while
-// - [ ] evaluate
 fn main() -> ExitCode {
     // 引数で式が与えられた場合はそれを入力として扱う
     // それ以外は標準入力にフォールバックする
@@ -229,5 +212,12 @@ mod tests {
         let result = parse("x=0; while(x<1){x=1;} x;");
 
         assert_eq!(result, Ok(1),);
+    }
+
+    #[test]
+    fn for_statement() {
+        let result = parse("for (ans=i=0; i<10; i=i+1) {ans = ans + i;} ans;");
+
+        assert_eq!(result, Ok(45),);
     }
 }

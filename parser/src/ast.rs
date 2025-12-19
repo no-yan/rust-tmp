@@ -127,10 +127,19 @@ pub struct While {
 }
 
 #[derive(Debug)]
+pub struct For {
+    pub init: Option<Expression>,
+    pub cond: Option<Expression>,
+    pub update: Option<Expression>,
+    pub body: Vec<Statement>,
+}
+
+#[derive(Debug)]
 pub enum Statement {
     ExpressionStatement(Expression),
     If(If),
     While(While),
+    For(For),
 }
 
 #[derive(Debug)]

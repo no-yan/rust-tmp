@@ -24,6 +24,7 @@ pub enum TokenKind {
 
     If,
     While,
+    For,
 
     Num(i32),
     Ident(String),

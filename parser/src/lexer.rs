@@ -109,6 +109,7 @@ impl<'a> Lexer<'a> {
                 match ident {
                     "if" => If,
                     "while" => While,
+                    "for" => For,
                     _ => Ident(ident.to_string()),
                 }
             }
@@ -332,6 +333,42 @@ mod test {
                 tok!(RightParen, 6, 7),
                 tok!(LeftBlock, 7, 8),
                 tok!(RightBlock, 8, 9),
+            ]
+        );
+    }
+
+    #[test]
+    fn r#for() {
+        let input = "for(i=0;i<1;i=i+1) {}";
+        let mut lexer = Lexer::new(input);
+        let result = lexer.lex().unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                // for(
+                tok!(For, 0, 3),
+                tok!(LeftParen, 3, 4),
+                // i=0;
+                tok!(Ident("i".to_string()), 4, 5),
+                tok!(Eq, 5, 6),
+                tok!(Num(0), 6, 7),
+                tok!(Semicolon, 7, 8),
+                // i<1;
+                tok!(Ident("i".to_string()), 8, 9),
+                tok!(Lt, 9, 10),
+                tok!(Num(1), 10, 11),
+                tok!(Semicolon, 11, 12),
+                // i=i+1
+                tok!(Ident("i".to_string()), 12, 13),
+                tok!(Eq, 13, 14),
+                tok!(Ident("i".to_string()), 14, 15),
+                tok!(Plus, 15, 16),
+                tok!(Num(1), 16, 17),
+                // ) {}
+                tok!(RightParen, 17, 18),
+                tok!(LeftBlock, 19, 20),
+                tok!(RightBlock, 20, 21),
             ]
         );
     }

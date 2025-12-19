@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::{BinaryOp, Expression, If, Program, Statement, UnaryOp, While};
+use crate::ast::{BinaryOp, Expression, For, If, Program, Statement, UnaryOp, While};
 
 struct Environment {
     register: HashMap<String, i32>,
@@ -58,6 +58,36 @@ impl Evaluator {
                 while self.expr(cond) > 0 {
                     for s in body {
                         result = self.stmt(s);
+                    }
+                }
+                result
+            }
+            Statement::For(For {
+                init,
+                cond,
+                update,
+                body,
+            }) => {
+                let mut result = 0;
+
+                if let Some(init) = init {
+                    result = self.expr(init);
+                }
+
+                let Some(cond) = cond else {
+                    // 簡単な実装のために、条件文がない場合にはblock
+                    // statementを評価しない
+                    // TODO:
+                    return 0;
+                };
+
+                while self.expr(cond) > 0 {
+                    for s in body {
+                        result = self.stmt(s);
+                    }
+
+                    if let Some(update) = update {
+                        self.expr(update);
                     }
                 }
                 result
