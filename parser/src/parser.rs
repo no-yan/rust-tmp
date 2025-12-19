@@ -123,16 +123,14 @@ impl Parser {
     }
 
     fn program(&mut self) -> ParseResult<Program> {
-        let mut stmt_list = vec![];
+        let mut body = vec![];
 
-        let stmt = self.stmt()?;
-        stmt_list.push(stmt);
+        body.push(self.stmt()?);
         while !self.is_eof() {
-            let stmt = self.stmt()?;
-            stmt_list.push(stmt);
+            body.push(self.stmt()?);
         }
 
-        Ok(Program { body: stmt_list })
+        Ok(Program { body })
     }
 
     fn stmt(&mut self) -> ParseResult<Statement> {
