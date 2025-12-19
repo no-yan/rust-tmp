@@ -191,187 +191,47 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{tok, token::TokenKind::*};
+    use std::fmt::Write;
 
-    #[test]
-    fn plus() {
-        let input = "+";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
+    fn format_lexer_test(name: &str, source: &str) -> String {
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.lex().unwrap();
 
-        assert_eq!(result, vec![tok!(Plus, 0, 1),]);
+        let mut output = format!("=== {} ===\nsource: {}\n\n", name, source);
+        for token in tokens {
+            writeln!(
+                output,
+                "[{}..{}]\t{:?}",
+                token.span.start, token.span.end, token.kind
+            )
+            .unwrap();
+        }
+        output.push('\n');
+        output
     }
 
     #[test]
-    fn complex() {
-        let input = "+ 123";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
+    fn lexer() {
+        #[rustfmt::skip]
+        const TESTS: &[(&str, &str)] = &[
+            ("plus_operator",        "+"),
+            ("number_literal",       "123"),
+            ("plus_and_number",      "+ 123"),
+            ("parenthesized_expr",   "(1)"),
+            ("power_operator",       "^"),
+            ("comparison_operators", "(1<2)*(1>=2)"),
+            ("assignment_statement", "x=1; x"),
+            ("if_keyword",           "if"),
+            ("if_statement",         "if (1>=0) {x=2;}"),
+            ("while_loop",           "while(){}"),
+            ("for_loop",             "for(i=0;i<1;i=i+1) {}"),
+        ];
 
-        assert_eq!(result, vec![tok!(Plus, 0, 1), tok!(Num(123), 2, 5),]);
-    }
+        let output = TESTS
+            .iter()
+            .map(|(name, source)| format_lexer_test(name, source))
+            .collect::<String>();
 
-    #[test]
-    fn number() {
-        let input = "123";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(result, vec![tok!(Num(123), 0, 3),]);
-    }
-
-    #[test]
-    fn parenthesis() {
-        let input = "(1)";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                tok!(LeftParen, 0, 1),
-                tok!(Num(1), 1, 2),
-                tok!(RightParen, 2, 3),
-            ]
-        );
-    }
-
-    #[test]
-    fn power() {
-        let input = "^";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(result, vec![tok!(Pow, 0, 1)]);
-    }
-
-    #[test]
-    fn compare_op() {
-        let input = "(1<2)*(1>=2)";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                tok!(LeftParen, 0, 1),
-                tok!(Num(1), 1, 2),
-                tok!(Lt, 2, 3),
-                tok!(Num(2), 3, 4),
-                tok!(RightParen, 4, 5),
-                tok!(Mul, 5, 6),
-                tok!(LeftParen, 6, 7),
-                tok!(Num(1), 7, 8),
-                tok!(GtEq, 8, 10),
-                tok!(Num(2), 10, 11),
-                tok!(RightParen, 11, 12),
-            ]
-        );
-    }
-
-    #[test]
-    fn assign() {
-        let input = "x=1; x";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                tok!(Ident("x".to_string()), 0, 1),
-                tok!(Eq, 1, 2),
-                tok!(Num(1), 2, 3),
-                tok!(Semicolon, 3, 4),
-                tok!(Ident("x".to_string()), 5, 6),
-            ]
-        );
-    }
-
-    #[test]
-    fn r#if() {
-        let input = "if";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(result, vec![tok!(If, 0, 2),]);
-    }
-
-    #[test]
-    fn r#if_statement() {
-        let input = "if (1>=0) {x=2;}";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                tok!(If, 0, 2),
-                tok!(LeftParen, 3, 4),
-                tok!(Num(1), 4, 5),
-                tok!(GtEq, 5, 7),
-                tok!(Num(0), 7, 8),
-                tok!(RightParen, 8, 9),
-                tok!(LeftBlock, 10, 11),
-                tok!(Ident("x".to_string()), 11, 12),
-                tok!(Eq, 12, 13),
-                tok!(Num(2), 13, 14),
-                tok!(Semicolon, 14, 15),
-                tok!(RightBlock, 15, 16),
-            ]
-        );
-    }
-
-    #[test]
-    fn r#while() {
-        let input = "while(){}";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                tok!(While, 0, 5),
-                tok!(LeftParen, 5, 6),
-                tok!(RightParen, 6, 7),
-                tok!(LeftBlock, 7, 8),
-                tok!(RightBlock, 8, 9),
-            ]
-        );
-    }
-
-    #[test]
-    fn r#for() {
-        let input = "for(i=0;i<1;i=i+1) {}";
-        let mut lexer = Lexer::new(input);
-        let result = lexer.lex().unwrap();
-
-        assert_eq!(
-            result,
-            vec![
-                // for(
-                tok!(For, 0, 3),
-                tok!(LeftParen, 3, 4),
-                // i=0;
-                tok!(Ident("i".to_string()), 4, 5),
-                tok!(Eq, 5, 6),
-                tok!(Num(0), 6, 7),
-                tok!(Semicolon, 7, 8),
-                // i<1;
-                tok!(Ident("i".to_string()), 8, 9),
-                tok!(Lt, 9, 10),
-                tok!(Num(1), 10, 11),
-                tok!(Semicolon, 11, 12),
-                // i=i+1
-                tok!(Ident("i".to_string()), 12, 13),
-                tok!(Eq, 13, 14),
-                tok!(Ident("i".to_string()), 14, 15),
-                tok!(Plus, 15, 16),
-                tok!(Num(1), 16, 17),
-                // ) {}
-                tok!(RightParen, 17, 18),
-                tok!(LeftBlock, 19, 20),
-                tok!(RightBlock, 20, 21),
-            ]
-        );
+        insta::assert_snapshot!(output);
     }
 }
