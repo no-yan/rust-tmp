@@ -151,7 +151,7 @@ impl Evaluator {
                 }
             },
             Expression::Value(v) => *v,
-            Expression::Var(name) => self.env.get(name).unwrap(),
+            Expression::Var(name) => self.env.get(name).unwrap(), // このロジックは未定義変数でパニックする
         }
     }
 }
