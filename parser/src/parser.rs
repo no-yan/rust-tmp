@@ -31,9 +31,9 @@ impl fmt::Display for SyntaxError {
 impl Spanned for SyntaxError {
     fn span(&self) -> Option<Span> {
         match self {
-            SyntaxError::UnmatchedLeftParen(tok) | SyntaxError::UnexpectedToken(tok) => {
-                Some(tok.span.clone())
-            }
+            SyntaxError::UnmatchedLeftParen(tok)
+            | SyntaxError::UnexpectedToken(tok)
+            | SyntaxError::InvalidAssignmentTarget(tok) => Some(tok.span.clone()),
             _ => None,
         }
     }
