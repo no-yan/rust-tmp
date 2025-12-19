@@ -7,7 +7,7 @@ pub type LexResult<T> = Result<T, LexicalError>;
 #[derive(Debug, PartialEq)]
 pub enum LexicalError {
     InvalidToken(String, Span),
-    Eof,
+    Eof, // センチネルエラー
 }
 
 impl Error for LexicalError {}
@@ -42,11 +42,11 @@ impl<'a> Lexer<'a> {
         Lexer { pos: 0, input }
     }
 
-    /// 入力全体をトークナイズし、トークン列 を返す
-    /// - 空白は無視する
-    /// - 連続する数字は一つのトークンとして扱う
-    /// - TODO: 小数点のサポート
-    /// - 不正な文字列があればErrを返す
+    /// 入力全体をトークナイズし、トークン列を返す。
+    /// 文字列をトークン化できない場合、エラーを返す。
+    ///
+    /// - 空白は読み飛ばす
+    /// - 返却するトークン列に`Eof`は含めない
     pub fn lex(&mut self) -> LexResult<Vec<Token>> {
         let mut tokens = Vec::new();
         loop {
@@ -61,8 +61,9 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    /// 現在位置から次の1トークンを読む
-    /// 不正な文字に遭遇したらErrを返す
+    /// 現在位置から1トークン読み進め、トークンを返す。
+    /// EoFに到達した場合は、`LexicalError::Eof`を返す。
+    /// トークナイズできない場合、`LexicalError::InvalidToken`を返す。
     pub fn next_token(&mut self) -> Result<Token, LexicalError> {
         use crate::token::TokenKind::*;
 
@@ -140,11 +141,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// 次の`char`を返す。トークンを読み進めない。
     fn peek(&self) -> Option<char> {
         self.input[self.pos..].chars().next()
     }
 
-    /// 1トークン読み進め、posを更新する
+    /// 入力を１文字分消費し、その文字を返す。
     pub fn bump(&mut self) -> Option<char> {
         let mut iter = self.input[self.pos..].chars();
         let ch = iter.next()?;

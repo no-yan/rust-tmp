@@ -46,18 +46,19 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// ## 仕様
 /// ### サポートする演算子
 ///
-/// - 二項演算子: `+`, `-`, `*`, `/`, `^`, `>`, `<`, `>=`, `<=`
+/// - 二項演算子: `+`, `-`, `*`, `/`, `^`, `>`, `<`, `>=`, `<=`, `=`
 /// - 単項演算子: `-`
 ///
 /// ### 優先順位
 ///
 /// 下に行くほど優先度が高い
-/// 1. `<` `<=` `>` `>=`
-/// 2. `+` `-`
-/// 3. `*` `/`
-/// 4. 単項`-`
-/// 5. `^`
-/// 6. `(` `)`
+/// 1. `=`
+/// 2. `<` `<=` `>` `>=`
+/// 3. `+` `-`
+/// 4. `*` `/`
+/// 5. 単項`-`
+/// 6. `^`
+/// 7. `(` `)`
 ///
 /// ### 結合性
 ///
@@ -116,9 +117,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ParseResult<Program> {
-        // Precedence climbing algorithmを使用してパースを行う。
-        // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
-
+        // 文は再帰下降パーサで、式はPrecedence climbingパーサで解析する
         self.program()
     }
 
@@ -233,6 +232,9 @@ impl Parser {
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {
+        // Precedence climbing algorithmを使用してパースを行う。
+        // see: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm#climbing
+
         let mut lhs = self.primary()?;
 
         while let Some(tok) = self.src.peek() {
@@ -245,9 +247,11 @@ impl Parser {
                 break;
             }
 
-            // 代入先が識別子でない場合、構文エラー
-            // e.g. "1 = 2"
+            // 代入演算子の場合、左辺が変数であることを保証する。
+            // 構文規則ではExprとしてパースされるが、L-valueである必要がある。
             if matches!(op, BinaryOp::Assign) && !matches!(lhs, Expression::Var(_)) {
+                // 例: "1 = 2"
+                
                 // TODO: エラーメッセージにlhsを表示する
                 return Err(SyntaxError::InvalidAssignmentTarget(tok.clone()));
             }
@@ -296,6 +300,8 @@ impl Parser {
         Ok(primary)
     }
 
+    /// 次のトークンが期待した`TokenKind`であることを確認し、消費する。
+    /// 異なる種類、またはEoFの場合はエラーを返す。
     fn expect(&mut self, expected: TokenKind) -> Result<(), SyntaxError> {
         match self.src.next() {
             Some(tok) if tok.kind == expected => Ok(()),
