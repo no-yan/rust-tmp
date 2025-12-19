@@ -140,6 +140,7 @@ impl Parser {
             TokenKind::If => Ok(self.r#if()?),
             TokenKind::While => Ok(self.r#while()?),
             TokenKind::For => Ok(self.r#for()?),
+            TokenKind::LeftBlock => Ok(self.block_statement()?),
             _ => {
                 let expr = self.expr(prec::LOWEST)?;
                 self.expect(TokenKind::Semicolon)?;
@@ -230,6 +231,21 @@ impl Parser {
             update,
             body,
         }))
+    }
+
+    fn block_statement(&mut self)  -> ParseResult<Statement> {
+        self.expect(TokenKind::LeftBlock)?;
+
+        let mut body = vec![];
+        while let Some(tok) = self.src.peek()
+            && tok.kind != TokenKind::RightBlock
+        {
+            body.push(self.stmt()?);
+        }
+
+        self.expect(TokenKind::RightBlock)?;
+
+        Ok(Statement::BlockStatement(body))
     }
 
     fn expr(&mut self, min_prec: u8) -> ParseResult<Expression> {

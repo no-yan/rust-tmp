@@ -44,6 +44,13 @@ impl Evaluator {
     fn stmt(&mut self, stmt: &Statement) -> i32 {
         match stmt {
             Statement::ExpressionStatement(e) => self.expr(e),
+            Statement::BlockStatement(stmt_list) => {
+                let mut result = 0;
+                for s in stmt_list {
+                    result = self.stmt(s);
+                }
+                result
+            },
             Statement::If(If { cond, then }) => {
                 let mut result = 0;
                 if self.expr(cond) > 0 {

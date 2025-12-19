@@ -226,4 +226,10 @@ mod tests {
         let result = parse("n=10; a=0; b=1; for (i=0; i<n; i=i+1) { tmp = a; a = b; b = tmp + b;} a;");
         assert_eq!(result, Ok(55));
     }
+
+    #[test]
+    fn block_statement() {
+        let result = parse("{ foo = 1; } foo;");
+        assert_eq!(result, Ok(1));
+    }
 }

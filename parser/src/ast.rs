@@ -137,6 +137,7 @@ pub struct For {
 #[derive(Debug)]
 pub enum Statement {
     ExpressionStatement(Expression),
+    BlockStatement(Vec<Statement>),
     If(If),
     While(While),
     For(For),
