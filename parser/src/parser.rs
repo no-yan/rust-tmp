@@ -18,12 +18,12 @@ impl Error for SyntaxError {}
 impl fmt::Display for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SyntaxError::UnmatchedLeftParen(_) => write!(f, "Unmatched left parenthesis"),
-            SyntaxError::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok.kind),
-            SyntaxError::InvalidAssignmentTarget(tok) => {
+            Self::UnmatchedLeftParen(_) => write!(f, "Unmatched left parenthesis"),
+            Self::UnexpectedToken(tok) => write!(f, "Unexpected token: {:?}", tok.kind),
+            Self::InvalidAssignmentTarget(tok) => {
                 write!(f, "Invalid assignment target: {:?}", tok.kind)
             }
-            SyntaxError::UnexpectedEof => write!(f, "Unexpected end of file"),
+            Self::UnexpectedEof => write!(f, "Unexpected end of file"),
         }
     }
 }
@@ -31,10 +31,11 @@ impl fmt::Display for SyntaxError {
 impl Spanned for SyntaxError {
     fn span(&self) -> Option<Span> {
         match self {
-            SyntaxError::UnmatchedLeftParen(tok)
-            | SyntaxError::UnexpectedToken(tok)
-            | SyntaxError::InvalidAssignmentTarget(tok) => Some(tok.span.clone()),
-            _ => None,
+            Self::UnmatchedLeftParen(tok)
+            | Self::UnexpectedToken(tok)
+            | Self::InvalidAssignmentTarget(tok) => Some(tok.span.clone()),
+            Self::UnexpectedEof => None,
+            
         }
     }
 }
