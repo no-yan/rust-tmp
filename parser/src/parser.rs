@@ -67,12 +67,12 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// ### 文法
 ///
 /// Program -> Stmt { ";" Stmt } [ ';' ]
-/// Stmt -> E
+/// Stmt    -> E
 ///
-/// E -> Expr(0)
-/// Expr(p) ->  Primary { BinOp Expr(q) }
+/// E       -> Expr(0)
+/// Expr(p) -> Primary { BinOp Expr(q) }
 /// Primary -> Unary Expr(q) | "(" E ")" | Ident | v
-/// Ident -> letter { letter | unicode_digit }
+/// Ident   -> letter { letter | unicode_digit }
 /// BinOp   -> "=" | "+" | "-" | "*" | "/" | "^" | ">" | "<" | ">=" | "<="
 /// Unary   -> "-"
 ///
