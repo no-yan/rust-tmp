@@ -68,12 +68,12 @@ pub type ParseResult<T> = Result<T, SyntaxError>;
 /// ### 文法
 ///
 /// Program -> Stmt { Stmt }
-/// Stmt    -> If | While | For | E
-/// If      -> "if" "(" E ")" "{" { Stmt ";" } "}"
-/// While   -> "while" "(" E ")" "{" { Stmt ";" } "}"
-/// For     -> "for" "(" [ E ] ";" [ E ] ";" [ E ] ")" "{" { Stmt ";" } "}"
+/// Stmt    -> If | While | For | E ";"
+/// If      -> "if" "(" E ")" "{" { Stmt } "}"
+/// While   -> "while" "(" E ")" "{" { Stmt } "}"
+/// For     -> "for" "(" [ E ] ";" [ E ] ";" [ E ] ")" "{" { Stmt } "}"
 ///
-/// E       -> Expr(0) ";"
+/// E       -> Expr(0)
 /// Expr(p) -> Primary { BinOp Expr(q) }
 /// Primary -> Unary Expr(q) | "(" E ")" | Ident | v
 /// Ident   -> letter { letter | unicode_digit }
@@ -149,7 +149,7 @@ impl Parser {
     }
 
     fn r#if(&mut self) -> ParseResult<Statement> {
-        // If      -> "if" "(" E ")" "{" { Stmt ";" } "}"
+        // If      -> "if" "(" E ")" "{" { Stmt } "}"
         self.src.next();
         self.expect(TokenKind::LeftParen)?;
         let cond = self.expr(prec::LOWEST)?;
@@ -170,7 +170,7 @@ impl Parser {
     }
 
     fn r#while(&mut self) -> ParseResult<Statement> {
-        // While   -> "while" "(" E ")" "{" { Stmt ";" } "}"
+        // While   -> "while" "(" E ")" "{" { Stmt } "}"
         self.src.next();
         self.expect(TokenKind::LeftParen)?;
         let cond = self.expr(prec::LOWEST)?;
@@ -191,7 +191,7 @@ impl Parser {
     }
 
     fn r#for(&mut self) -> ParseResult<Statement> {
-        // For     -> "for" "(" [ E ] ";" [ E ] ";" [ E ] ")" "{" { Stmt ";" } "}"
+        // For     -> "for" "(" [ E ] ";" [ E ] ";" [ E ] ")" "{" { Stmt } "}"
         self.src.next();
         self.expect(TokenKind::LeftParen)?;
 
