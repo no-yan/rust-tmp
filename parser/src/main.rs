@@ -222,6 +222,12 @@ mod tests {
     }
 
     #[test]
+    fn for_with_empty_clause() {
+        let result = parse("for (x=0;;) { x=1; } x;");
+        assert_eq!(result, Ok(0));
+    }
+
+    #[test]
     fn fibonatti() {
         let result =
             parse("n=10; a=0; b=1; for (i=0; i<n; i=i+1) { tmp = a; a = b; b = tmp + b;} a;");
@@ -233,4 +239,5 @@ mod tests {
         let result = parse("{ foo = 1; } foo;");
         assert_eq!(result, Ok(1));
     }
+
 }

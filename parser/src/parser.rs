@@ -208,7 +208,7 @@ impl Parser {
         self.expect(TokenKind::Semicolon)?;
 
         let update = match self.src.peek() {
-            Some(tok) if tok.kind != TokenKind::Semicolon => Some(self.expr(prec::LOWEST)?),
+            Some(tok) if tok.kind != TokenKind::RightParen => Some(self.expr(prec::LOWEST)?),
             _ => None,
         };
 
