@@ -15,7 +15,7 @@ pub enum TokenKind {
     Mul,
     Div,
     Pow,
-    Eq,
+    Assign,
 
     Gt,   // >
     Lt,   // <

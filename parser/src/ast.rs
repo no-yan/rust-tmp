@@ -64,7 +64,7 @@ impl TryFrom<&TokenKind> for BinaryOp {
             Lt => Ok(BinaryOp::Lt),
             GtEq => Ok(BinaryOp::GtEq),
             LtEq => Ok(BinaryOp::LtEq),
-            Eq => Ok(BinaryOp::Assign),
+            Assign => Ok(BinaryOp::Assign),
             _ => Err(()),
         }
     }

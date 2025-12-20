@@ -196,7 +196,7 @@ mod tests {
         let result = parse("1=2;");
         assert_eq!(
             result,
-            Err(SyntaxError::InvalidAssignmentTarget(tok!(Eq, 1, 2)).into())
+            Err(SyntaxError::InvalidAssignmentTarget(tok!(Assign, 1, 2)).into())
         );
     }
 

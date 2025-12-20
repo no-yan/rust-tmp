@@ -84,7 +84,7 @@ impl<'a> Lexer<'a> {
             '(' => LeftParen,
             ')' => RightParen,
             ';' => Semicolon,
-            '=' => Eq,
+            '=' => Assign,
             '{' => LeftBlock,
             '}' => RightBlock,
             '<' => match self.peek() {
