@@ -150,12 +150,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// 次の`char`を返す。トークンを読み進めない。
+    /// 現在の読み取り位置にある文字を返す。
+    /// `Lexer::bump`と異なり、この関数はポインタを移動しない。
     fn peek(&self) -> Option<char> {
         self.input[self.pos..].chars().next()
     }
 
-    /// 入力を１文字分消費し、その文字を返す。
+    /// 現在の読み取り位置にある文字を返し、ポインタを次の文字へ進める。
     pub fn bump(&mut self) -> Option<char> {
         let ch = self.peek()?;
 
@@ -164,6 +165,9 @@ impl<'a> Lexer<'a> {
         Some(ch)
     }
 
+    /// 現在の読み取り位置にある文字が`expected`と一致するか判定する。
+    /// 一致した場合、ポインタを次の文字に進め、`true`を返す。
+    /// 一致しない場合、ポインタを進めずに、`false`を返す。
     fn eat(&mut self, expected: char) -> bool {
         let ch = self.peek();
         if ch != Some(expected) {
