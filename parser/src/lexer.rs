@@ -84,33 +84,32 @@ impl<'a> Lexer<'a> {
             '(' => LeftParen,
             ')' => RightParen,
             ';' => Semicolon,
-            '=' => match self.peek() {
-                Some('=') => {
-                    self.bump();
-                    Eq
-                }
-                _ => Assign,
-            },
-            '!' if self.peek() == Some('=') => {
-                self.bump();
-                Neq
-            }
             '{' => LeftBlock,
             '}' => RightBlock,
-            '<' => match self.peek() {
-                Some('=') => {
-                    self.bump();
+
+            '=' => {
+                if self.eat('=') {
+                    Eq
+                } else {
+                    Assign
+                }
+            }
+            '!' if self.eat('=') => Neq,
+            '<' => {
+                if self.eat('=') {
                     LtEq
+                } else {
+                    Lt
                 }
-                _ => Lt,
-            },
-            '>' => match self.peek() {
-                Some('=') => {
-                    self.bump();
+            }
+            '>' =>  {
+                if self.eat('=') {
                     GtEq
+                } else {
+                    Gt
                 }
-                Some(_) | None => Gt,
             },
+
             c if c.is_ascii_digit() => {
                 let num = self.next_number();
                 Num(num)
@@ -158,13 +157,21 @@ impl<'a> Lexer<'a> {
 
     /// 入力を１文字分消費し、その文字を返す。
     pub fn bump(&mut self) -> Option<char> {
-        let mut iter = self.input[self.pos..].chars();
-        let ch = iter.next()?;
+        let ch = self.peek()?;
 
         // 多バイト文字を考慮してutf8に変換
         self.pos += ch.len_utf8();
-
         Some(ch)
+    }
+
+    fn eat(&mut self, expected: char) -> bool {
+        let ch = self.peek();
+        if ch != Some(expected) {
+            return false;
+        }
+
+        self.pos += ch.unwrap().len_utf8();
+        true
     }
 
     pub fn next_number(&mut self) -> i32 {
