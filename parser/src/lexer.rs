@@ -84,7 +84,17 @@ impl<'a> Lexer<'a> {
             '(' => LeftParen,
             ')' => RightParen,
             ';' => Semicolon,
-            '=' => Assign,
+            '=' => match self.peek() {
+                Some('=') => {
+                    self.bump();
+                    Eq
+                }
+                _ => Assign,
+            },
+            '!' if self.peek() == Some('=') => {
+                self.bump();
+                Neq
+            }
             '{' => LeftBlock,
             '}' => RightBlock,
             '<' => match self.peek() {
@@ -220,7 +230,7 @@ mod test {
             ("plus_and_number",      "+ 123"),
             ("parenthesized_expr",   "(1)"),
             ("power_operator",       "^"),
-            ("comparison_operators", "(1<2)*(1>=2)"),
+            ("comparison_operators", "== != < <= > >="),
             ("assignment_statement", "x=1; x"),
             ("if_keyword",           "if"),
             ("if_statement",         "if (1>=0) {x=2;}"),

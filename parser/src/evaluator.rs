@@ -113,6 +113,20 @@ impl Evaluator {
                 BinaryOp::Mul => self.expr(lhs) * self.expr(rhs),
                 BinaryOp::Div => self.expr(lhs) / self.expr(rhs),
                 BinaryOp::Pow => self.expr(lhs).pow(self.expr(rhs) as u32),
+                BinaryOp::Eq => {
+                    if self.expr(lhs) == self.expr(rhs) {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                BinaryOp::Neq => {
+                    if self.expr(lhs) != self.expr(rhs) {
+                        1
+                    } else {
+                        0
+                    }
+                }
                 BinaryOp::Gt => {
                     if self.expr(lhs) > self.expr(rhs) {
                         1

@@ -36,6 +36,8 @@ pub enum BinaryOp {
     Mul,
     Div,
     Pow,
+    Eq,
+    Neq,
     Gt,
     GtEq,
     Lt,
@@ -60,6 +62,8 @@ impl TryFrom<&TokenKind> for BinaryOp {
             Mul => Ok(BinaryOp::Mul),
             Div => Ok(BinaryOp::Div),
             Pow => Ok(BinaryOp::Pow),
+            Eq => Ok(BinaryOp::Eq),
+            Neq => Ok(BinaryOp::Neq),
             Gt => Ok(BinaryOp::Gt),
             Lt => Ok(BinaryOp::Lt),
             GtEq => Ok(BinaryOp::GtEq),
@@ -75,7 +79,7 @@ impl BinaryOp {
         use BinaryOp::*;
 
         match self {
-            Gt | GtEq | Lt | LtEq => OpInfo {
+            Eq | Neq | Gt | GtEq | Lt | LtEq => OpInfo {
                 prec: prec::COMPARE,
                 assoc: Assoc::Left,
             },

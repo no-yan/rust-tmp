@@ -31,19 +31,14 @@ source: ^
 [0..1]	Pow
 
 === comparison_operators ===
-source: (1<2)*(1>=2)
+source: == != < <= > >=
 
-[0..1]	LeftParen
-[1..2]	Num(1)
-[2..3]	Lt
-[3..4]	Num(2)
-[4..5]	RightParen
-[5..6]	Mul
-[6..7]	LeftParen
-[7..8]	Num(1)
-[8..10]	GtEq
-[10..11]	Num(2)
-[11..12]	RightParen
+[0..2]	Eq
+[3..5]	Neq
+[6..7]	Lt
+[8..10]	LtEq
+[11..12]	Gt
+[13..15]	GtEq
 
 === assignment_statement ===
 source: x=1; x

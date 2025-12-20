@@ -17,6 +17,8 @@ pub enum TokenKind {
     Pow,
     Assign,
 
+    Eq,   // ==
+    Neq,  // !=
     Gt,   // >
     Lt,   // <
     GtEq, // >=

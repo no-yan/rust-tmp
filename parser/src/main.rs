@@ -240,4 +240,27 @@ mod tests {
         assert_eq!(result, Ok(1));
     }
 
+    #[test]
+    fn eq_true() {
+        let result = parse("1==1;");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn eq_false() {
+        let result = parse("1==0;");
+        assert_eq!(result, Ok(0));
+    }
+
+    #[test]
+    fn neq_true() {
+        let result = parse("1!=0;");
+        assert_eq!(result, Ok(1));
+    }
+
+    #[test]
+    fn neq_false() {
+        let result = parse("1!=1;");
+        assert_eq!(result, Ok(0));
+    }
 }
