@@ -50,7 +50,7 @@ impl Evaluator {
                     result = self.stmt(s);
                 }
                 result
-            },
+            }
             Statement::If(If { cond, then }) => {
                 let mut result = 0;
                 if self.expr(cond) > 0 {

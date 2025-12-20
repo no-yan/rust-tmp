@@ -190,8 +190,9 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::fmt::Write;
+
+    use super::*;
 
     fn format_lexer_test(name: &str, source: &str) -> String {
         let mut lexer = Lexer::new(source);

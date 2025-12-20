@@ -35,7 +35,6 @@ impl Spanned for SyntaxError {
             | Self::UnexpectedToken(tok)
             | Self::InvalidAssignmentTarget(tok) => Some(tok.span.clone()),
             Self::UnexpectedEof => None,
-            
         }
     }
 }
@@ -233,7 +232,7 @@ impl Parser {
         }))
     }
 
-    fn block_statement(&mut self)  -> ParseResult<Statement> {
+    fn block_statement(&mut self) -> ParseResult<Statement> {
         self.expect(TokenKind::LeftBlock)?;
 
         let mut body = vec![];
@@ -268,7 +267,7 @@ impl Parser {
             // 構文規則ではExprとしてパースされるが、L-valueである必要がある。
             if matches!(op, BinaryOp::Assign) && !matches!(lhs, Expression::Var(_)) {
                 // 例: "1 = 2"
-                
+
                 // TODO: エラーメッセージにlhsを表示する
                 return Err(SyntaxError::InvalidAssignmentTarget(tok.clone()));
             }
