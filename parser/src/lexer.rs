@@ -102,13 +102,13 @@ impl<'a> Lexer<'a> {
                     Lt
                 }
             }
-            '>' =>  {
+            '>' => {
                 if self.eat('=') {
                     GtEq
                 } else {
                     Gt
                 }
-            },
+            }
 
             c if c.is_ascii_digit() => {
                 let num = self.next_number();

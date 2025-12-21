@@ -1,25 +1,46 @@
 mod ast;
+mod codegen;
 mod error;
-mod evaluator;
 mod lexer;
 mod parser;
 mod token;
 
-use std::process::ExitCode;
+use std::{
+    fs::File,
+    io::Write,
+    process::{Command, ExitCode},
+};
 
 use crate::{
+    codegen::CodeGenerator,
     error::{CompilerError, format_error},
-    evaluator::Evaluator,
     lexer::Lexer,
     parser::Parser,
 };
 
-fn run(input: &str) -> Result<i32, CompilerError> {
+// TODO: 重複しないラベル生成
+// TODO: for文サポート
+// TODO: while文サポート
+// TODO: return文のサポート
+// TODO: テスト再設計
+fn run(input: &str) -> Result<(), CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let program = Parser::new(tokens).parse()?;
-    let mut evaluator = Evaluator::new();
+    let mut codegen = CodeGenerator::new();
 
-    Ok(evaluator.eval(&program))
+    let assembly_string = codegen.generate(&program);
+
+    let mut f = File::create("test.s").unwrap();
+    f.write_all(assembly_string.as_bytes()).unwrap();
+
+    let _ = Command::new("cc")
+        .arg("-o")
+        .arg("test")
+        .arg("test.s")
+        .output()
+        .expect("failed to execute process");
+
+    Ok(())
 }
 
 fn main() -> ExitCode {
@@ -35,7 +56,6 @@ fn main() -> ExitCode {
     });
 
     run(&input)
-        .inspect(|v| println!("{v}"))
         .inspect_err(|e| eprintln!("{}", format_error(e, &input)))
         .map_or(ExitCode::FAILURE, |_| ExitCode::SUCCESS)
 }
@@ -43,7 +63,7 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{evaluator::Evaluator, parser::SyntaxError, token::TokenKind::*};
+    use crate::{parser::SyntaxError, token::TokenKind::*};
 
     fn parse(input: &str) -> Result<i32, CompilerError> {
         let mut lexer = Lexer::new(input);
