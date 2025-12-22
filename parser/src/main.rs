@@ -19,20 +19,22 @@ use crate::{
 };
 
 // TODO: 重複しないラベル生成
+// TODO: ローカル変数サポート
+// TODO: return文のサポート
+// TODO: 関数呼び出しサポート
+// TODO: テスト再設計
 // TODO: for文サポート
 // TODO: while文サポート
-// TODO: return文のサポート
-// TODO: テスト再設計
+// TODO: statement系でblock statement以外のbodyをパースできるようにする
 fn run(input: &str) -> Result<(), CompilerError> {
     let tokens = Lexer::new(input).lex()?;
     let program = Parser::new(tokens).parse()?;
-    let mut codegen = CodeGenerator::new();
-
-    let assembly_string = codegen.generate(&program);
+    let assembly_string = CodeGenerator::new().generate(&program);
 
     let mut f = File::create("test.s").unwrap();
     f.write_all(assembly_string.as_bytes()).unwrap();
 
+    // Create object file
     let _ = Command::new("cc")
         .arg("-o")
         .arg("test")
